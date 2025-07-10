@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.bg-grid-pattern {
+    background-image: linear-gradient(rgba(20, 20, 20, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(20, 20, 20, 0.03) 1px, transparent 1px);
+}
+.dark .bg-grid-pattern {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+
+@keyframes fade-in-down { 0% { opacity: 0; transform: translateY(-20px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in-up { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes fade-in-sm { 0% { opacity: 0; } 100% { opacity: 1; } }
+
+.animate-fade-in-down { animation: fade-in-down 0.5s ease-out forwards; }
+.animate-fade-in-up { animation: fade-in-up 0.5s ease-out 0.2s forwards; }
+.animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
+.animate-fade-in-sm { animation: fade-in 0.3s ease-out forwards; }
+
+
+@layer base {
+  :root {
+    --background: 240 10% 98%;
+    --foreground: 240 10% 3.9%;
+    --card: 240 10% 98%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 240 10% 98%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 244 54% 60%;
+    --primary-foreground: 240 10% 98%;
+    --secondary: 240 5% 90%;
+    --secondary-foreground: 240 10% 3.9%;
+    --muted: 240 5% 90%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 90%;
+    --accent-foreground: 240 10% 3.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 240 10% 98%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 244 54% 60%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 240 10% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 240 10% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 240 10% 98%;
+    --primary: 244 54% 60%;
+    --primary-foreground: 240 10% 98%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 240 10% 98%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 4% 64%;
+    --accent: 240 4% 16%;
+    --accent-foreground: 240 10% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 240 10% 98%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 244 54% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+}
