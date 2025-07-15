@@ -24,18 +24,18 @@ export default function EarnPage() {
     return (
         <div className="max-w-4xl mx-auto p-4 md:p-8 animate-fade-in">
             <h2 className="text-3xl font-bold text-foreground mb-2">Earn</h2>
-            <p className="text-muted-foreground mb-8">Deposit your t-DOGE into the Stability Pool to earn rewards.</p>
+            <p className="text-muted-foreground mb-8">Deposit your tDOGE into the Stability Pool to earn rewards.</p>
 
             <div className="bg-card/70 border rounded-2xl p-6 shadow-xl">
                 <h3 className="text-xl font-bold text-foreground mb-4">Stability Pool</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-secondary/50 p-4 rounded-lg">
                         <p className="text-sm text-muted-foreground">Total Deposited</p>
-                        <p className="text-2xl font-bold text-foreground">25.7M t-DOGE</p>
+                        <p className="text-2xl font-bold text-foreground">25.7M tDOGE</p>
                     </div>
                     <div className="bg-secondary/50 p-4 rounded-lg">
                         <p className="text-sm text-muted-foreground">Your Deposit</p>
-                        <p className="text-2xl font-bold text-foreground">{currentDeposit.toLocaleString()} t-DOGE</p>
+                        <p className="text-2xl font-bold text-foreground">{currentDeposit.toLocaleString()} tDOGE</p>
                     </div>
                 </div>
 
@@ -54,7 +54,7 @@ export default function EarnPage() {
                             <label className="text-sm font-medium text-muted-foreground block mb-2">Amount to deposit</label>
                             <div className="relative">
                                 <input type="number" placeholder="0.00" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} className="w-full bg-secondary border border-border rounded-lg p-3 text-foreground text-xl focus:ring-2 focus:ring-ring focus:border-ring outline-none" />
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">t-DOGE</span>
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">tDOGE</span>
                             </div>
                             <button onClick={handleAction} className="mt-4 w-full bg-primary text-primary-foreground font-bold py-3 rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2">
                                 <Plus size={20}/> Deposit
@@ -65,7 +65,7 @@ export default function EarnPage() {
                             <label className="text-sm font-medium text-muted-foreground block mb-2">Amount to withdraw</label>
                             <div className="relative">
                                 <input type="number" placeholder="0.00" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} className="w-full bg-secondary border border-border rounded-lg p-3 text-foreground text-xl focus:ring-2 focus:ring-ring focus:border-ring outline-none" />
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">t-DOGE</span>
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">tDOGE</span>
                             </div>
                             <button onClick={handleAction} className="mt-4 w-full bg-primary text-primary-foreground font-bold py-3 rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2">
                                 <Minus size={20}/> Withdraw

@@ -15,7 +15,7 @@ import {
 import { Slider } from "@/components/ui/slider"
 import { Label } from '@/components/ui/label';
 
-const WalletConnectButton = ({ walletName, onConnect, isConnected, address }) => (
+const WalletConnectButton = ({ walletName, onConnect, isConnected, address }:any) => (
   <div className="bg-secondary p-4 rounded-lg border flex items-center justify-between">
     <div>
       <p className="font-semibold text-foreground">{walletName}</p>
@@ -38,15 +38,16 @@ const WalletConnectButton = ({ walletName, onConnect, isConnected, address }) =>
 
 const getVaultData = (id: string) => {
     const vaults: Record<string, { asset: string; icon: string }> = {
-        doge: { asset: 'DOGE', icon: 'Ð' },
-        wbtc: { asset: 'wBTC', icon: '₿' },
-        eth: { asset: 'ETH', icon: 'Ξ' },
+        doge: { asset: 'tDOGE', icon: 'Ð' },
+        litecoin: { asset: 'tltc', icon: '₿' },
+        bitcoin_cash: { asset: 'tbch', icon: 'Ξ' },
     };
     return vaults[id] || vaults.doge;
 };
 
 
 export default function VaultDepositPage({ params }: { params: { id: string } }) {
+  //@ts-ignore
     const { id } = use(params);
     const vault = getVaultData(id);
     const [dogeAmount, setDogeAmount] = useState('');
@@ -140,12 +141,12 @@ export default function VaultDepositPage({ params }: { params: { id: string } })
                 &larr; Back to Vaults
             </Link>
             <div className="bg-background/70 border border-border rounded-2xl p-6 shadow-xl">
-                <h2 className="text-2xl font-bold text-foreground mb-1">Deposit {vault.asset}</h2>
-                <p className="text-muted-foreground mb-6">You will receive t-DOGE, a tokenized version of your deposit.</p>
+                <h2 className="text-2xl font-bold text-foreground mb-5">Mint {vault.asset}</h2>
+                {/* <p className="text-muted-foreground mb-6">You will receive tDOGE.</p> */}
 
                 <div className="space-y-4">
                     <div>
-                        <Label className="text-sm font-medium text-muted-foreground block mb-2">Amount to lock</Label>
+                        <Label className="text-sm font-medium text-muted-foreground block mb-2">Amount to Mint tDOGE</Label>
                         <div className="relative">
                             <input
                                 type="number"
@@ -158,39 +159,10 @@ export default function VaultDepositPage({ params }: { params: { id: string } })
                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">{vault.asset}</span>
                         </div>
                     </div>
-
-                    <div className="space-y-4 pt-2">
-                        <Label htmlFor="locking-period" className="text-sm font-medium text-muted-foreground">Locking Period: <span className="font-bold text-primary">{lockingPeriod} Months</span></Label>
-                        <Slider
-                          id="locking-period"
-                          min={3}
-                          max={9}
-                          step={3}
-                          value={[lockingPeriod]}
-                          onValueChange={(value) => setLockingPeriod(value[0])}
-                          disabled={isPeriodSigned}
-                          className="disabled:cursor-not-allowed"
-                        />
-                      </div>
-
-                    <div>
-                        <Label className="text-sm font-medium text-muted-foreground block mb-2">Amount you will receive</Label>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                readOnly
-                                value={tDogeAmount}
-                                placeholder="0.00"
-                                className="w-full bg-background border border-border rounded-lg p-3 text-foreground text-xl"
-                            />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">t-DOGE</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground/80 mt-1 text-center">1 {vault.asset} = 1 t-DOGE</p>
-                    </div>
                 </div>
 
                 <div className="my-6 space-y-3">
-                    <WalletConnectButton walletName="DOGE Wallet" onConnect={handleConnectDoge} isConnected={dogeWalletConnected} address={dogeAddress} />
+                    {/* <WalletConnectButton walletName="DOGE Wallet" onConnect={handleConnectDoge} isConnected={dogeWalletConnected} address={dogeAddress} /> */}
                     <WalletConnectButton walletName="EVM Wallet" onConnect={handleConnectEvm} isConnected={evmWalletConnected} address={evmAddress} />
                 </div>
                 
