@@ -18,13 +18,13 @@ export default function EarnPage() {
         if (isConnected && address) {
             console.log('Connected address:', address);
             // Placeholder: Replace with your actual contract address and ABI
-            const WHITELIST_CONTRACT = '0x0000000000000000000000000000000000000000';
+            const WHITELIST_CONTRACT = '0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48';
             const ABI = [
                 'function isWhitelisted(address user) view returns (bool)'
             ];
             async function checkWhitelist() {
                 try {
-                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    const provider = new ethers.BrowserProvider(window.ethereum);
                     const contract = new ethers.Contract(WHITELIST_CONTRACT, ABI, provider);
                     const whitelisted = await contract.isWhitelisted(address);
                     setIsWhitelisted(whitelisted);

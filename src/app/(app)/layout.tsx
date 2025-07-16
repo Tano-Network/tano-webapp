@@ -1,15 +1,24 @@
-'use client';
+// app/layout.tsx
+'use client'; // Keep this for your layout if it contains client-side logic
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { X, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Import your Providers component
+import { Providers } from './providers'; // Adjust path if your providers.tsx is elsewhere
+
 import { RainbowConnectButton } from '@/components/RainbowConnectButton';
 import { useAccount } from 'wagmi';
 import { ThemeToggle } from '@/components/theme-toggle';
 
+// Import RainbowKit's base styles
+import '@rainbow-me/rainbowkit/styles.css';
+// Import your global styles
+import '../globals.css';
 
+// ... (AppHeader component remains the same as you provided)
 function AppHeader() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -79,17 +88,21 @@ function AppHeader() {
   )
 }
 
+
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <AppHeader />
-      <main className="flex-1">
-        {children}
-      </main>
-    </div>
+    // Wrap your entire application content with Providers
+    <Providers>
+      <div className="min-h-screen flex flex-col bg-background">
+        <AppHeader />
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
+    </Providers>
   )
 }
