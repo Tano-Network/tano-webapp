@@ -39,7 +39,7 @@ export default function VaultsPage() {
                 />
                 <StatCard
                     icon={<Coins size={24} className="text-primary" />}
-                    label="Total t-DOGE Minted"
+                    label="Total tDOGE Minted"
                     value="148.2M t-DOGE"
                 />
             </div>
