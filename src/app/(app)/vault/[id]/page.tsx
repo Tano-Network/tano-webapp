@@ -1,6 +1,20 @@
 
 'use client';
 import { useState, useEffect, use } from 'react';
+import { ethers } from 'ethers';
+// TypeScript fix for window.ethereum
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
+// TypeScript fix for window.ethereum
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
 import Link from 'next/link';
 import { Zap, CheckCircle2 } from 'lucide-react';
 import {
@@ -81,15 +95,20 @@ export default function VaultDepositPage({ params }: { params: { id: string } })
         }, 1000);
     };
 
-    const handleConnectEvm = () => {
-        setTimeout(() => {
+    // Connect EVM wallet and get address
+    const handleConnectEvm = async () => {
+        try {
+            if (!window.ethereum) throw new Error('No EVM wallet found');
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            const address = await signer.getAddress();
             setEvmWalletConnected(true);
-            if (window.crypto && window.crypto.randomUUID) {
-              setEvmAddress(`0x...${window.crypto.randomUUID().slice(-12)}`);
-            } else {
-              setEvmAddress(`0x...${(Math.random().toString(36) + '00000000000000000').slice(2, 14)}`);
-            }
-        }, 1000);
+            setEvmAddress(address);
+        } catch (err) {
+            setModalContent({ title: 'Wallet Connect Failed', description: (err && (err as any).message) ? (err as any).message : 'Could not connect wallet', isSuccess: false });
+            setShowModal(true);
+        }
     };
 
     const handleSign = () => {
@@ -107,18 +126,38 @@ export default function VaultDepositPage({ params }: { params: { id: string } })
         }, 2000);
     }
     
-    const handleMint = () => {
+    // AssetManager contract ABI (minimal for mint)
+    const assetManagerAbi = [
+      "function mint(uint256 amount) public"
+    ];
+    const assetManagerAddress = "0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48";
+
+    const handleMint = async () => {
         if (!canMint) return;
         setIsProcessing(true);
         setProcessingStep('minting');
         setShowModal(true);
         setModalContent({ title: 'Minting t-DOGE', description: 'Confirming the transaction on the EVM chain...', isSuccess: false });
 
-        setTimeout(() => {
+        try {
+            // Prompt user for wallet connection
+            if (!window.ethereum) throw new Error('No EVM wallet found');
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            const signer = provider.getSigner();
+            const contract = new ethers.Contract(assetManagerAddress, assetManagerAbi, signer);
+            // Convert amount to wei (assuming tDOGE has 18 decimals)
+            const amount = ethers.utils.parseUnits(dogeAmount || '0', 18);
+            const tx = await contract.mint(amount);
+            await tx.wait();
             setIsProcessing(false);
             setProcessingStep('');
             setModalContent({ title: 'Minting Successful!', description: `You have successfully deposited ${dogeAmount} ${vault.asset} and received ${tDogeAmount} t-DOGE.`, isSuccess: true });
-        }, 3000);
+        } catch (err: any) {
+            setIsProcessing(false);
+            setProcessingStep('');
+            setModalContent({ title: 'Minting Failed', description: (err && err.message) ? err.message : 'Transaction failed', isSuccess: false });
+        }
     }
 
     const closeModal = () => {
@@ -133,7 +172,7 @@ export default function VaultDepositPage({ params }: { params: { id: string } })
     }
 
     const canSign = dogeWalletConnected && evmWalletConnected && parseFloat(dogeAmount) > 0 && lockingPeriod !== 0 && !isPeriodSigned && !isProcessing;
-    const canMint = isPeriodSigned && !isProcessing;
+    const canMint = isPeriodSigned && evmWalletConnected && !isProcessing;
 
     return (
         <div className="max-w-2xl mx-auto p-4 md:p-8 animate-fade-in">

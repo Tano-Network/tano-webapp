@@ -1,6 +1,11 @@
 'use client';
+
 import { useRouter } from 'next/navigation';
 import { Lock, Coins } from 'lucide-react';
+import { RainbowConnectButton } from '@/components/RainbowConnectButton';
+import { useAccount } from 'wagmi';
+import { useEffect, useState } from 'react';
+import { ethers } from 'ethers';
 
 const vaults = [
     { id: 'doge', asset: 'DOGE', icon: 'Ð', totalLocked: '150.5M tDOGE', apy: '12.8%', myDeposit: '0.00' },
@@ -20,8 +25,80 @@ const StatCard = ({ icon, label, value }:any) => (
     </div>
   );
 
+
 export default function VaultsPage() {
     const router = useRouter();
+    const { address, isConnected, chain } = useAccount();
+    const [isWhitelisted, setIsWhitelisted] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        if (isConnected && address) {
+            console.log('Connected address:', address);
+            // Placeholder: Replace with your actual contract address and ABI
+            const WHITELIST_CONTRACT = '0x0000000000000000000000000000000000000000';
+            const ABI = [
+                'function isWhitelisted(address user) view returns (bool)'
+            ];
+            async function checkWhitelist() {
+                try {
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    const contract = new ethers.Contract(WHITELIST_CONTRACT, ABI, provider);
+                    const whitelisted = await contract.isWhitelisted(address);
+                    setIsWhitelisted(whitelisted);
+                    console.log('Whitelist check:', whitelisted);
+                } catch (err) {
+                    setIsWhitelisted(false);
+                    console.error('Whitelist check error:', err);
+                }
+            }
+            checkWhitelist();
+        }
+    }, [isConnected, address]);
+
+    // UI for wallet connect
+    if (!isConnected) {
+        console.log('Wallet not connected');
+        return (
+            <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="bg-card border rounded-xl p-8 flex flex-col items-center">
+                    <p className="text-xl font-semibold text-foreground mb-4">To access this page, connect your wallet.</p>
+                    <div className="mb-4">
+                        <RainbowConnectButton />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (isWhitelisted === false) {
+        return (
+            <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="bg-card border rounded-xl p-8 flex flex-col items-center">
+                    <p className="text-xl font-semibold text-destructive mb-4">Your address is not whitelisted.</p>
+                </div>
+            </div>
+        );
+    }
+
+
+    // UI for connected wallet
+    const WalletInfo = () => {
+        useEffect(() => {
+            console.log('Vault page: chain', chain);
+        }, [chain]);
+        return (
+            <div className="flex items-center gap-4 mb-8">
+                <div className="bg-card border rounded-lg px-4 py-2 flex flex-col md:flex-row md:items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Network:</span>
+                    <span className="font-semibold text-primary">{chain?.name || 'Unknown'}</span>
+                    <span className="hidden md:inline-block mx-2 text-muted-foreground">|</span>
+                    <span className="text-sm text-muted-foreground">Address:</span>
+                    <span className="font-mono text-xs bg-secondary rounded px-2 py-1">{address}</span>
+                    <span className="ml-2"><RainbowConnectButton /></span>
+                </div>
+            </div>
+        );
+    }
 
     const onSelectVault = (vault:any) => {
         router.push(`/vault/${vault.id}`);
@@ -30,7 +107,7 @@ export default function VaultsPage() {
     return (
         <div className="max-w-6xl mx-auto p-4 md:p-8 animate-fade-in">
             <h2 className="text-3xl font-bold text-foreground mb-6">Vaults Dashboard</h2>
-
+            <WalletInfo />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <StatCard
                     icon={<Lock size={24} className="text-primary" />}
@@ -82,4 +159,4 @@ export default function VaultsPage() {
             </div>
         </div>
     );
-};
+}

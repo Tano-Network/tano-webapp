@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { X, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+import { RainbowConnectButton } from '@/components/RainbowConnectButton';
+import { useAccount } from 'wagmi';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 
@@ -16,7 +19,7 @@ function AppHeader() {
     { href: '/earn', label: 'Earn' },
   ];
 
-  const navigateTo = (targetPage) => {
+  const navigateTo = (targetPage: string) => {
     setIsMobileMenuOpen(false);
   }
 
@@ -44,7 +47,8 @@ function AppHeader() {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                   <ThemeToggle />
+                    <RainbowConnectButton />
+                    <ThemeToggle />
                     <div className="-mr-2 flex md:hidden">
                         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} type="button" className="bg-secondary inline-flex items-center justify-center p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-ring" aria-controls="mobile-menu" aria-expanded="false">
                             <span className="sr-only">Open main menu</span>
