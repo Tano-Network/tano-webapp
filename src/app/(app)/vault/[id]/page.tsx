@@ -16,26 +16,30 @@ import { Label } from '@/components/ui/label';
 
 // ABI and contract address
 import assetManagementAbi from '@/abi/assetManagement.json'; // adjust as needed
-const assetManagerAddress = "0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48";
+import assetAbi from '@/abi/asset.json'; // adjust as needed
+
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 const getVaultData = (id: string) => {
-  const vaults: Record<string, { asset: string; icon: string; contractAddress: string }> = {
+  const vaults: Record<string, { asset: string; icon: string; contractAddress: string, assetAddress: string }> = {
     doge: {
       asset: 'tDOGE',
       icon: 'Ð',
       contractAddress: '0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48',
+      assetAddress: '0x46507E8929Fe9C20c8914fc9036829F6e7740D9D'
     },
     litecoin: {
       asset: 'tLTC',
       icon: 'Ł',
       contractAddress: '0x1111111111111111111111111111111111111111', // example
+      assetAddress: '0x2222222222222222222222222222222222222222', // example
     },
     bitcoin_cash: {
       asset: 'tBCH',
       icon: 'Ƀ',
       contractAddress: '0x2222222222222222222222222222222222222222', // example
+      assetAddress: '0x3333333333333333333333333333333333333333', // example
     },
   };
   return vaults[id] || {
@@ -56,9 +60,13 @@ export default function VaultDepositPage({ params }: { params: { id: string } })
   const [evmAddress, setEvmAddress] = useState('');
   const [contract, setContract] = useState<Contract | null>(null);
 
+  const [assetContract, setAssetContract] = useState<Contract | null>(null);
+
   const [isWhitelisted, setIsWhitelisted] = useState(false);
   const [mintableAmount, setMintableAmount] = useState<number>(0);
+  const [mintedAmount, setMintedAmount] = useState<number>(0);
   const [allowance, setAllowance] = useState<number>(0);
+  const [currentAssetBalance, setCurrentAssetBalance] = useState<number>(0);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState('');
@@ -72,17 +80,23 @@ export default function VaultDepositPage({ params }: { params: { id: string } })
   const fetchContractState = async () => {
     try {
       console.log('Fetching on-chain state for', evmAddress);
-      const [whitelisted, mintable, allowanceAmt] = await Promise.all([
+      const [whitelisted, mintable, allowanceAmt, mintedAmt,curBal] = await Promise.all([
         contract!.isWhitelisted(evmAddress),
         contract!.getMintableAmount(evmAddress),
         contract!.getAllowance(evmAddress),
+        contract!.getMintedAmount(evmAddress),
+        assetContract!.balanceOf(evmAddress),
       ]);
       console.log('Whitelisted:', whitelisted);
       console.log('Mintable Amount:', formatUnits(mintable, 18));
       console.log('Allowance:', formatUnits(allowanceAmt, 18));
+      console.log('Minted Amount:', formatUnits(mintedAmt, 18));
+      console.log('Current Asset Balance:', formatUnits(curBal, 18));
       setIsWhitelisted(whitelisted);
       setMintableAmount(mintable);
       setAllowance(allowanceAmt);
+      setMintedAmount(mintedAmt);
+      setCurrentAssetBalance(curBal);
     } catch (error) {
       console.error('Contract call error:', error);
     }
@@ -96,12 +110,14 @@ export default function VaultDepositPage({ params }: { params: { id: string } })
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
       const contractInstance = new Contract(vault.contractAddress, assetManagementAbi, signer);
+      const assetInstance = new Contract(vault.assetAddress, assetAbi, signer);
 
 
       console.log('Connected address:', address);
       setEvmWalletConnected(true);
       setEvmAddress(address);
       setContract(contractInstance);
+      setAssetContract(assetInstance);
     } catch (err: any) {
       setModalContent({ title: 'Wallet Connect Failed', description: err.message || 'Could not connect wallet', isSuccess: false });
       setShowModal(true);
@@ -181,6 +197,8 @@ useEffect(() => {
 
           {evmWalletConnected && (
             <div className="text-sm text-muted-foreground space-y-1 mt-4">
+              <div>💸 <strong>Minted Amount:</strong> {formatUnits(mintedAmount || 0, 18)}</div>
+              <div>💸 <strong>Current {vault.asset} Balance:</strong> {formatUnits(currentAssetBalance || 0, 18)} {vault.icon}</div>
               <div>🔐 <strong>Whitelisted:</strong> {isWhitelisted ? 'Yes' : 'No'}</div>
               <div>💰 <strong>Mintable Amount:</strong> {formatUnits(mintableAmount || 0, 18)}</div>
               <div>🪙 <strong>Allowance:</strong> {formatUnits(allowance || 0, 18)}</div>
