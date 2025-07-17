@@ -105,7 +105,7 @@ const VaultCard = ({ vault, isWhitelisted, onSelect, isLoading, index }) => {
       )
     }
     if (isWhitelisted === false) {
-      return <Badge variant="destructive">Not Whitelisted</Badge>
+      return <Badge variant="destructive">Address Not Whitelisted</Badge>
     }
     if (isWhitelisted === true) {
       return (
@@ -118,7 +118,8 @@ const VaultCard = ({ vault, isWhitelisted, onSelect, isLoading, index }) => {
     return <Skeleton className="h-5 w-20" />
   }
 
-  const isDisabled = vault.status === "coming-soon" || isWhitelisted === false
+  // const isDisabled = vault.status === "coming-soon" || isWhitelisted === false
+  const isDisabled = vault.status === "coming-soon"
 
   return (
     <Card
@@ -361,29 +362,7 @@ export default function VaultsPage() {
 
       {/* Wallet Info Alert */}
       {isConnected && isCorrectNetwork && (
-        <Alert className="mb-8 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors duration-300">
-          <CheckCircle2 className="h-4 w-4 text-primary" />
-          <AlertDescription className="flex items-center justify-between w-full">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
-              <span className="flex items-center gap-2">
-                <span className="text-muted-foreground">Network:</span>
-                <Badge variant="outline" className="font-mono">
-                  Sepolia Testnet
-                </Badge>
-              </span>
-              <span className="hidden sm:inline text-muted-foreground">•</span>
-              <span className="flex items-center gap-2">
-                <span className="text-muted-foreground">Address:</span>
-                <code className="bg-secondary px-2 py-1 rounded text-xs font-mono">
-                  {address?.slice(0, 6)}...{address?.slice(-4)}
-                </code>
-              </span>
-            </div>
-            <div className="hidden sm:block">
-              <RainbowConnectButton />
-            </div>
-          </AlertDescription>
-        </Alert>
+        <div></div>
       )}
 
       {/* Stats Grid */}

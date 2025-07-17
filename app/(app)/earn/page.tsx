@@ -170,7 +170,7 @@ export default function EarnPage() {
 
             <CardContent className="space-y-6">
               {/* Wallet Info */}
-              <Alert className="border-primary/20 bg-primary/5">
+              {/* <Alert className="border-primary/20 bg-primary/5">
                 <Info className="h-4 w-4" />
                 <AlertDescription className="flex items-center justify-between w-full">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
@@ -187,7 +187,7 @@ export default function EarnPage() {
                   </div>
                   <RainbowConnectButton />
                 </AlertDescription>
-              </Alert>
+              </Alert> */}
 
               {/* Your Position */}
               <div className="bg-secondary/30 p-4 rounded-lg">
