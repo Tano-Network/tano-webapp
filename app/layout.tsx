@@ -11,13 +11,13 @@ export const metadata: Metadata = {
     "Unlock the power of your cryptocurrency with Tano Finance. Earn yield and participate in a decentralized financial ecosystem.",
   keywords: ["DeFi", "Cryptocurrency", "Yield Farming", "Blockchain", "Finance"],
   authors: [{ name: "Tano Finance Team" }],
-  viewport: "width=device-width, initial-scale=1",
+  
   openGraph: {
     title: "Tano Finance - Decentralized Finance Platform",
     description: "Earn yield and participate in the future of decentralized finance",
     type: "website",
   },
-    generator: 'v0.dev'
+    
 }
 
 export default function RootLayout({
