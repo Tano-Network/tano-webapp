@@ -71,7 +71,7 @@ export default function VaultsPage() {
                                     <td className="p-4">{vault.myDeposit}</td>
                                     <td className="p-4 text-right">
                                         <button onClick={() => onSelectVault(vault)} className="bg-primary text-primary-foreground font-semibold py-2 px-4 rounded-lg hover:bg-primary/90 transition-all">
-                                            Deposit
+                                           Mint
                                         </button>
                                     </td>
                                 </tr>

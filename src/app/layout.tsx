@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'T-Doge Finance',
@@ -25,17 +26,18 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans bg-grid-pattern">
-   
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
+        {/* ✨ FIX: Nest providers around a single {children} instance */}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Providers>
             {children}
             <Toaster />
-          </ThemeProvider>
-     
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );
