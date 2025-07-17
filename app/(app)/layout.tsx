@@ -205,17 +205,6 @@ function AppHeader() {
 function WalletGuard({ children }: { children: React.ReactNode }) {
   const { isConnected, isConnecting } = useAccount()
   const router = useRouter()
-  const [isRedirecting, setIsRedirecting] = useState(false)
-
-  useEffect(() => {
-    if (!isConnecting && !isConnected && !isRedirecting) {
-      setIsRedirecting(true)
-      const timer = setTimeout(() => {
-        router.push("/")
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [isConnected, isConnecting, router, isRedirecting])
 
   if (isConnecting) {
     return (
@@ -229,18 +218,37 @@ function WalletGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!isConnected) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <LoadingSpinner size="lg" />
-          <p className="text-muted-foreground">Redirecting to homepage...</p>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="bg-card border border-border shadow-lg rounded-xl p-8 max-w-md w-full text-center space-y-6">
+        <div className="flex justify-center">
+          <div className="bg-primary/10 p-4 rounded-full text-primary">
+            <Wallet className="w-8 h-8" />
+          </div>
+        </div>
+        <h2 className="text-xl font-semibold text-foreground">Wallet Not Connected</h2>
+        <p className="text-muted-foreground text-sm">
+          Please connect your wallet to continue using the app.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link href="/" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full">
+              Go to Homepage
+            </Button>
+          </Link>
+          <div className="w-full sm:w-auto">
+            <RainbowConnectButton />
+          </div>
         </div>
       </div>
-    )
-  }
+    </div>
+  )
+}
+
 
   return <>{children}</>
 }
+
 
 export default function AppLayout({
   children,
