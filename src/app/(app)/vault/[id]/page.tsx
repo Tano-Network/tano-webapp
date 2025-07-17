@@ -42,7 +42,6 @@ const getVaultData = (id: string) => {
       assetAddress: '0x3333333333333333333333333333333333333333', // example
     },
   };
-  
   return vaults[id] || {
     asset: 'Unknown',
     icon: '?',
@@ -181,9 +180,7 @@ export default function VaultDepositPage({ params }: { params: Promise<VaultPara
       }
     `}
   </style>
-</div>
-
-
+        </div>
       )}
 
       <Link href="/vault" className="text-muted-foreground hover:text-foreground mb-4 block">&larr; Back to Vaults</Link>
