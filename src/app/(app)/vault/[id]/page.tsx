@@ -1,8 +1,9 @@
+
 'use client';
-import { useEffect, useState, use } from 'react';
-import { BrowserProvider, Contract, parseUnits, formatUnits } from 'ethers';
+import React, { useEffect, useState, use } from 'react';
+import { Contract, BrowserProvider, parseUnits, formatUnits } from 'ethers';
 import Link from 'next/link';
-import { Zap, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ExternalLink } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,16 +14,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
+import assetManagementAbi from '@/abi/assetManagement.json';
+import assetAbi from '@/abi/asset.json';
 
-// ABI and contract address
-import assetManagementAbi from '@/abi/assetManagement.json'; // adjust as needed
-import assetAbi from '@/abi/asset.json'; // adjust as needed
-
-
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+interface VaultParams {
+  id: string;
+}
 
 const getVaultData = (id: string) => {
-  const vaults: Record<string, { asset: string; icon: string; contractAddress: string, assetAddress: string }> = {
+  const vaults: Record<string, { asset: string; icon: string; contractAddress: string; assetAddress: string }> = {
     doge: {
       asset: 'tDOGE',
       icon: 'Ð',
@@ -42,24 +42,22 @@ const getVaultData = (id: string) => {
       assetAddress: '0x3333333333333333333333333333333333333333', // example
     },
   };
+  
   return vaults[id] || {
     asset: 'Unknown',
     icon: '?',
-    contractAddress: ZERO_ADDRESS,
+    contractAddress: '0x0000000000000000000000000000000000000000',
+    assetAddress: '0x0000000000000000000000000000000000000000',
   };
 };
 
-
-export default function VaultDepositPage({ params }: { params: { id: string } }) {
-  //@ts-ignore
-  const { id } = params; // ✅ avoid hydration error
+export default function VaultDepositPage({ params }: { params: Promise<VaultParams> }) {
+  const { id } = use(params);
   const vault = getVaultData(id);
 
   const [dogeAmount, setDogeAmount] = useState('');
-  const [evmWalletConnected, setEvmWalletConnected] = useState(false);
   const [evmAddress, setEvmAddress] = useState('');
   const [contract, setContract] = useState<Contract | null>(null);
-
   const [assetContract, setAssetContract] = useState<Contract | null>(null);
 
   const [isWhitelisted, setIsWhitelisted] = useState(false);
@@ -71,186 +69,182 @@ export default function VaultDepositPage({ params }: { params: { id: string } })
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [modalContent, setModalContent] = useState({ title: '', description: '', isSuccess: false });
+  const [modalContent, setModalContent] = useState<{ title: string; description: string; isSuccess: boolean; txHash?: string }>({ title: '', description: '', isSuccess: false });
 
   useEffect(() => {
-    if (evmAddress && contract) fetchContractState();
-  }, [evmAddress, contract]);
+    const connect = async () => {
+      if (!window.ethereum) return;
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const address = await signer.getAddress();
+      setEvmAddress(address);
+      const contractInstance = new Contract(vault.contractAddress, assetManagementAbi, signer);
+      const assetInstance = new Contract(vault.assetAddress, assetAbi, signer);
+      setContract(contractInstance);
+      setAssetContract(assetInstance);
+    };
+    connect();
+  }, [vault.contractAddress, vault.assetAddress]);
 
-  const fetchContractState = async () => {
-    try {
-      console.log('Fetching on-chain state for', evmAddress);
-      const [whitelisted, mintable, allowanceAmt, mintedAmt,curBal] = await Promise.all([
-        contract!.isWhitelisted(evmAddress),
-        contract!.getMintableAmount(evmAddress),
-        contract!.getAllowance(evmAddress),
-        contract!.getMintedAmount(evmAddress),
-        assetContract!.balanceOf(evmAddress),
+  useEffect(() => {
+    const fetchState = async () => {
+      if (!contract || !assetContract || !evmAddress) return;
+      const [whitelisted, mintable, allowanceAmt, mintedAmt, curBal] = await Promise.all([
+        contract.isWhitelisted(evmAddress),
+        contract.getMintableAmount(evmAddress),
+        contract.getAllowance(evmAddress),
+        contract.getMintedAmount(evmAddress),
+        assetContract.balanceOf(evmAddress),
       ]);
-      console.log('Whitelisted:', whitelisted);
-      console.log('Mintable Amount:', formatUnits(mintable, 18));
-      console.log('Allowance:', formatUnits(allowanceAmt, 18));
-      console.log('Minted Amount:', formatUnits(mintedAmt, 18));
-      console.log('Current Asset Balance:', formatUnits(curBal, 18));
       setIsWhitelisted(whitelisted);
       setMintableAmount(mintable);
       setAllowance(allowanceAmt);
       setMintedAmount(mintedAmt);
       setCurrentAssetBalance(curBal);
-    } catch (error) {
-      console.error('Contract call error:', error);
-    }
-  };
+    };
+    fetchState();
+  }, [contract, assetContract, evmAddress]);
 
-  const handleConnectEvm = async () => {
-    try {
-      if (!window.ethereum) throw new Error('No EVM wallet found');
-      const provider = new BrowserProvider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
-      const contractInstance = new Contract(vault.contractAddress, assetManagementAbi, signer);
-      const assetInstance = new Contract(vault.assetAddress, assetAbi, signer);
-
-
-      console.log('Connected address:', address);
-      setEvmWalletConnected(true);
-      setEvmAddress(address);
-      setContract(contractInstance);
-      setAssetContract(assetInstance);
-    } catch (err: any) {
-      setModalContent({ title: 'Wallet Connect Failed', description: err.message || 'Could not connect wallet', isSuccess: false });
-      setShowModal(true);
-    }
-  };
-useEffect(() => {
-  if (window.ethereum) {
-    handleConnectEvm();
-  }
-}, []);
   const handleMint = async () => {
-    if (!contract || !canMint) return;
-
+    if (!contract || parseFloat(dogeAmount) <= 0) return;
     setIsProcessing(true);
     setProcessingStep('minting');
     setShowModal(true);
-    setModalContent({ title: 'Minting t-DOGE', description: 'Confirming onchain transaction...', isSuccess: false });
-
+    setModalContent({ title: 'Minting', description: 'Confirm in your wallet...', isSuccess: false });
     try {
-      const amount = parseUnits(dogeAmount || '0', 18);
-      console.log('Calling mint with amount:', amount.toString());
+      const amount = parseUnits(dogeAmount, 18);
       const tx = await contract.mint(amount);
-      console.log('Transaction sent:', tx.hash);
+      setModalContent({ title: 'Transaction Sent', description: 'Waiting for confirmation...', isSuccess: false });
       await tx.wait();
-      console.log('Transaction confirmed');
       setIsProcessing(false);
       setProcessingStep('');
       setModalContent({
-        title: 'Minting Successful!',
-        description: `You minted ${dogeAmount} tDOGE.`,
+        title: 'Mint Successful',
+        description: `Minted ${dogeAmount} ${vault.asset}`,
         isSuccess: true,
+        txHash: tx.hash,
       });
-    } catch (err: any) {
-      console.error('Mint error:', err);
+      setDogeAmount('');
+    } catch (err) {
       setIsProcessing(false);
       setProcessingStep('');
-      setModalContent({ title: 'Minting Failed', description: err.message || 'Transaction failed', isSuccess: false });
+      setModalContent({ title: 'Mint Failed', description: err instanceof Error ? err.message : 'Transaction failed', isSuccess: false });
     }
   };
-
-  const closeModal = () => {
-    setShowModal(false);
-    if (modalContent.title.includes('Successful')) {
-      setDogeAmount('');
-      fetchContractState();
-    }
-  };
-
-  const canMint =
-    evmWalletConnected &&
-    isWhitelisted &&
-    mintableAmount > 0 &&
-    parseFloat(dogeAmount) > 0 &&
-    !isProcessing;
 
   return (
-    <div className="max-w-2xl mx-auto p-4 md:p-8">
-      <Link href="/vault" className="text-muted-foreground hover:text-foreground mb-6 flex items-center gap-2">
-        &larr; Back to Vaults
-      </Link>
-      <div className="bg-background/70 border border-border rounded-2xl p-6 shadow-xl">
-        <h2 className="text-2xl font-bold text-foreground mb-5">Mint {vault.asset}</h2>
-        <div className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium text-muted-foreground block mb-2">Amount to Mint tDOGE</Label>
-            <div className="relative">
-              <input
-                type="number"
-                placeholder="0.00"
-                value={dogeAmount}
-                onChange={(e) => setDogeAmount(e.target.value)}
-                className="w-full bg-secondary border border-border rounded-lg p-3 text-foreground text-xl focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">{vault.asset}</span>
-            </div>
-          </div>
+    <div className="relative max-w-md mx-auto p-4">
+      {!isWhitelisted && (
+        <div
+  style={{
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    zIndex: 50,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '24px',
+    boxSizing: 'border-box',
+    animation: 'scaleIn 0.3s ease-out forwards'
+  }}
+>
+  <div
+    style={{
+      background: 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
+      borderRadius: '16px',
+      padding: '32px',
+      maxWidth: '90%',
+      color: '#ffffff',
+      fontSize: '1.25rem',
+      fontWeight: '600',
+      textAlign: 'center',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+      backdropFilter: 'blur(15px)',
+      WebkitBackdropFilter: 'blur(15px)',
+      transition: 'transform 0.3s ease'
+    }}
+  >
+    🚫 You are not whitelisted to mint {vault.asset}.
+  </div>
+  <style>
+    {`
+      @keyframes scaleIn {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+    `}
+  </style>
+</div>
 
-          {evmWalletConnected && (
-            <div className="text-sm text-muted-foreground space-y-1 mt-4">
-              <div>💸 <strong>Minted Amount:</strong> {formatUnits(mintedAmount || 0, 18)}</div>
-              <div>💸 <strong>Current {vault.asset} Balance:</strong> {formatUnits(currentAssetBalance || 0, 18)} {vault.icon}</div>
-              <div>🔐 <strong>Whitelisted:</strong> {isWhitelisted ? 'Yes' : 'No'}</div>
-              <div>💰 <strong>Mintable Amount:</strong> {formatUnits(mintableAmount || 0, 18)}</div>
-              <div>🪙 <strong>Allowance:</strong> {formatUnits(allowance || 0, 18)}</div>
-            </div>
-          )}
-        </div>
 
-        <div className="my-6 space-y-3">
-          <button
-            onClick={handleConnectEvm}
-            disabled={evmWalletConnected}
-            className={`w-full px-4 py-2 rounded-md font-semibold text-sm ${
-              evmWalletConnected
-                ? 'bg-green-500/20 text-green-400 cursor-not-allowed'
-                : 'bg-primary hover:bg-primary/90 text-primary-foreground'
-            }`}
-          >
-            {evmWalletConnected ? `Connected: ${evmAddress.slice(0, 6)}...${evmAddress.slice(-4)}` : 'Connect Wallet'}
-          </button>
-        </div>
+      )}
 
-        <div className="mt-6">
-          <button
-            onClick={handleMint}
-            disabled={!canMint}
-            className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-lg hover:bg-primary/90 transition-all disabled:bg-muted disabled:cursor-not-allowed disabled:text-muted-foreground"
-          >
-            {processingStep === 'minting' ? 'Minting...' : `Mint ${vault.asset}`}
-          </button>
-        </div>
+      <Link href="/vault" className="text-muted-foreground hover:text-foreground mb-4 block">&larr; Back to Vaults</Link>
+      <h2 className="text-2xl font-bold mb-4">Mint {vault.asset}</h2>
+
+      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mb-2">
+        <div>💰 Mintable: {formatUnits(mintableAmount, 18)} {vault.icon}</div>
+        <div>🪙 Allowance: {formatUnits(allowance, 18)} {vault.icon}</div>
+        <div>💸 Balance: {formatUnits(currentAssetBalance, 18)} {vault.icon}</div>
+        <div>🔐 Whitelisted: {isWhitelisted ? <span className="text-green-500">Yes</span> : <span className="text-red-500">No</span>}</div>
+        <div>🪙 Minted: {formatUnits(mintedAmount, 18)} {vault.icon}</div>
       </div>
+
+      <Label className="text-sm mb-1">Amount to Mint {vault.asset}</Label>
+      <div className="relative mb-4">
+        <input
+          type="number"
+          placeholder="0.0"
+          value={dogeAmount}
+          onChange={(e) => setDogeAmount(e.target.value)}
+          className="w-full bg-secondary border border-border rounded p-3 text-xl"
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">{vault.asset}</span>
+      </div>
+
+      <button
+        onClick={handleMint}
+        disabled={!isWhitelisted || parseFloat(dogeAmount) <= 0 || isProcessing}
+        className="mt-3 w-full bg-primary text-primary-foreground font-bold py-3 rounded hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
+      >
+        {processingStep === 'minting' ? 'Minting...' : `Mint ${vault.asset}`}
+      </button>
 
       <AlertDialog open={showModal} onOpenChange={setShowModal}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{modalContent.title}</AlertDialogTitle>
             <AlertDialogDescription>
-              <div className="flex flex-col items-center justify-center gap-4 mt-4">
+              <div className="flex flex-col items-center mt-4 gap-3">
                 {!modalContent.isSuccess ? (
-                  <span className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                  <span className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <span className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <CheckCircle2 size={28} className="text-green-400" />
-                  </span>
+                  <CheckCircle2 size={40} className="text-green-400" />
                 )}
                 <p>{modalContent.description}</p>
+                {modalContent.isSuccess && modalContent.txHash && (
+                  <a
+                    href={`https://sepolia.etherscan.io/tx/${modalContent.txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 px-3 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 text-sm"
+                  >
+                    View on Etherscan <ExternalLink size={14} />
+                  </a>
+                )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           {modalContent.isSuccess && (
             <AlertDialogFooter>
-              <AlertDialogAction onClick={closeModal}>Done</AlertDialogAction>
+              <AlertDialogAction onClick={() => setShowModal(false)}>Close</AlertDialogAction>
             </AlertDialogFooter>
           )}
         </AlertDialogContent>
