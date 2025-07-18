@@ -1,248 +1,273 @@
-
 'use client';
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Zap, CheckCircle2 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Slider } from "@/components/ui/slider"
+import { parseUnits, formatUnits} from 'viem';
+import { CheckCircle2, ArrowLeft, XCircle } from 'lucide-react';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useParams } from 'next/navigation';
+
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
-const WalletConnectButton = ({ walletName, onConnect, isConnected, address }) => (
-  <div className="bg-secondary p-4 rounded-lg border flex items-center justify-between">
-    <div>
-      <p className="font-semibold text-foreground">{walletName}</p>
-      {isConnected && <p className="text-xs text-muted-foreground font-mono break-all">{address}</p>}
-    </div>
-    <button
-      onClick={onConnect}
-      disabled={isConnected}
-      className={`px-4 py-2 rounded-md text-sm font-semibold transition-all duration-300 ${
-        isConnected
-          ? 'bg-green-500/20 text-green-400 cursor-not-allowed'
-          : 'bg-primary/80 hover:bg-primary text-primary-foreground'
-      }`}
-    >
-      {isConnected ? 'Connected' : `Connect ${walletName}`}
-    </button>
-  </div>
-);
+// ABIs for different vaults
+import DogeAssetManagerABI from '../../../../utils/abi/dogecoin/AssetManagerABI.json';
+import LitecoinAssetManagerABI from '../../../../utils/abi/litecoin/AssetManagerABI.json';
 
+// --- Type Definition for Vault Configuration ---
+type VaultConfig = {
+    assetManagerContract: `0x${string}`;
+    assetManagerABI: any;
+    asset: string;
+    icon: string;
+};
 
-const getVaultData = (id: string) => {
-    const vaults: Record<string, { asset: string; icon: string }> = {
-        doge: { asset: 'DOGE', icon: 'Ð' },
-        wbtc: { asset: 'wBTC', icon: '₿' },
-        eth: { asset: 'ETH', icon: 'Ξ' },
-    };
-    return vaults[id] || vaults.doge;
+// --- Dynamic Configuration for Vaults ---
+const VAULT_CONFIG: Record<string, VaultConfig> = {
+    doge: {
+        assetManagerContract: '0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48', // Example address for Doge
+        assetManagerABI: DogeAssetManagerABI,
+        asset: 'tDOGE',
+        icon: 'Ð',
+    },
+    litecoin: {
+        assetManagerContract: '0xA4F45B2628f2cFac02d2E8f3C2267e87c5e02BFf', // Example address for Litecoin
+        assetManagerABI: LitecoinAssetManagerABI,
+        asset: 'tLTC',
+        icon: '₿',
+    },
 };
 
 
-export default function VaultDepositPage({ params }: { params: { id: string } }) {
-    const { id } = use(params);
-    const vault = getVaultData(id);
-    const [dogeAmount, setDogeAmount] = useState('');
-    const [tDogeAmount, setTDogeAmount] = useState('');
-    const [lockingPeriod, setLockingPeriod] = useState(3);
-    const [isPeriodSigned, setIsPeriodSigned] = useState(false);
+const getRpcErrorMessage = (error: any): string => {
+    if (error?.shortMessage) {
+        return error.shortMessage;
+    }
+    return 'An unknown error occurred. Please try again.';
+};
 
-    const [dogeWalletConnected, setDogeWalletConnected] = useState(false);
-    const [evmWalletConnected, setEvmWalletConnected] = useState(false);
-    const [dogeAddress, setDogeAddress] = useState('');
-    const [evmAddress, setEvmAddress] = useState('');
-    
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [processingStep, setProcessingStep] = useState(''); // 'signing', 'minting'
+// --- Success Card Component ---
+const MintSuccessCard = ({ amount, asset, onMintAgain, onViewTx }: {
+    amount: string;
+    asset: string;
+    onMintAgain: () => void;
+    onViewTx: () => void;
+}) => (
+    <div className="bg-background/70 border border-border rounded-2xl p-6 shadow-xl text-center animate-fade-in">
+        <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 size={32} className="text-green-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-foreground">Mint Successful!</h2>
+      <p className="text-muted-foreground mt-2 mb-6">
+  You successfully minted {amount} {asset}.
+</p>
+        <div className="flex flex-col gap-3">
+             <Button onClick={onViewTx}>
+                 View Transaction
+            </Button>
+            <Button variant="outline" onClick={onMintAgain}>
+                Mint More
+            </Button>
+        </div>
+    </div>
+);
+
+
+export default function VaultDepositPage() {
+    const { id } = useParams<{ id: string }>();
+    const config = VAULT_CONFIG[id] || VAULT_CONFIG.doge; // Get config based on URL, fallback to doge
+
+    // --- Component State ---
+    const [amount, setAmount] = useState('');
     const [showModal, setShowModal] = useState(false);
-    const [modalContent, setModalContent] = useState({ title: '', description: '', isSuccess: false });
+    const [modalContent, setModalContent] = useState({ title: '', description: '' });
+    const [lastMintedAmount, setLastMintedAmount] = useState('');
+    const [showSuccessCard, setShowSuccessCard] = useState(false);
 
+    // --- Hooks ---
+    const { address, isConnected } = useAccount();
+    const { data: hash, error, writeContract, isPending } = useWriteContract();
+    const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
-    useEffect(() => {
-        setTDogeAmount(dogeAmount);
-    }, [dogeAmount]);
+    const { data: isWhitelisted, isLoading: isCheckingWhitelist } = useReadContract({
+        address: config.assetManagerContract,
+        abi: config.assetManagerABI,
+        functionName: 'isWhitelisted',
+        args: address?[address]:undefined,
+        query: { enabled: isConnected && !!address },
+    });
 
-    const handleConnectDoge = () => {
-        setTimeout(() => {
-            setDogeWalletConnected(true);
-            if (window.crypto && window.crypto.randomUUID) {
-              setDogeAddress(`D...${window.crypto.randomUUID().slice(-12)}`);
-            } else {
-              setDogeAddress(`D...${(Math.random().toString(36) + '00000000000000000').slice(2, 14)}`);
-            }
-        }, 1000);
-    };
+    const { data: mintableAmountRaw, refetch: refetchMintableAmount } = useReadContract({
+        address: config.assetManagerContract,
+        abi: config.assetManagerABI,
+        functionName: 'getMintableAmount',
+        args: address?[address]:undefined,
+        query: { enabled: isConnected && !!address && isWhitelisted === true },
+    });
 
-    const handleConnectEvm = () => {
-        setTimeout(() => {
-            setEvmWalletConnected(true);
-            if (window.crypto && window.crypto.randomUUID) {
-              setEvmAddress(`0x...${window.crypto.randomUUID().slice(-12)}`);
-            } else {
-              setEvmAddress(`0x...${(Math.random().toString(36) + '00000000000000000').slice(2, 14)}`);
-            }
-        }, 1000);
-    };
+    const formattedMintableAmount = useMemo(() => {
+        if (typeof mintableAmountRaw === 'bigint') {
+            return formatUnits(mintableAmountRaw, 18);
+        }
+        return '0';
+    }, [mintableAmountRaw]);
 
-    const handleSign = () => {
-        if (!canSign) return;
-        setIsProcessing(true);
-        setProcessingStep('signing');
-        setShowModal(true);
-        setModalContent({ title: 'Signing Locking Period', description: 'Please sign the transaction in your DOGE wallet...', isSuccess: false });
+    const isAmountInvalid = useMemo(() => {
+        if (!amount || typeof mintableAmountRaw !== 'bigint') return false;
+        try {
+            return parseUnits(amount, 18) > mintableAmountRaw;
+        } catch {
+            return true;
+        }
+    }, [amount, mintableAmountRaw]);
 
-        setTimeout(() => {
-            setIsPeriodSigned(true);
-            setIsProcessing(false);
-            setProcessingStep('');
-            setModalContent({ title: 'Signature Successful', description: 'You have successfully signed the locking period. You can now proceed to mint your t-DOGE.', isSuccess: true });
-        }, 2000);
-    }
-    
+    // --- Event Handlers ---
     const handleMint = () => {
-        if (!canMint) return;
-        setIsProcessing(true);
-        setProcessingStep('minting');
-        setShowModal(true);
-        setModalContent({ title: 'Minting t-DOGE', description: 'Confirming the transaction on the EVM chain...', isSuccess: false });
+        if (isWhitelisted === false) {
+            alert("Your address is not whitelisted for minting.");
+            return;
+        }
+        if (isAmountInvalid) {
+            alert(`Amount exceeds your minting allowance.`);
+            return;
+        }
+        if (!isConnected || !amount || parseFloat(amount) <= 0) {
+            alert("Please connect your wallet and enter a valid amount.");
+            return;
+        }
 
-        setTimeout(() => {
-            setIsProcessing(false);
-            setProcessingStep('');
-            setModalContent({ title: 'Minting Successful!', description: `You have successfully deposited ${dogeAmount} ${vault.asset} and received ${tDogeAmount} t-DOGE.`, isSuccess: true });
-        }, 3000);
+        setLastMintedAmount(amount);
+        writeContract({
+            address: config.assetManagerContract,
+            abi: config.assetManagerABI,
+            functionName: 'mint',
+            args: [parseUnits(amount, 18)],
+        });
     }
 
-    const closeModal = () => {
-        if (modalContent.title === 'Minting Successful!') {
-            setShowModal(false);
-            setDogeAmount('');
-            setLockingPeriod(3);
-            setIsPeriodSigned(false);
-        } else {
+    // --- useEffects for Modals and State Changes ---
+    useEffect(() => {
+        if (isConfirming || isPending) {
+            setShowModal(true);
+            setModalContent({
+                title: isPending ? 'Awaiting Confirmation' : 'Processing Transaction',
+                description: isPending ? 'Please confirm in your wallet.' : 'Waiting for blockchain confirmation...',
+            });
+        }
+        // Hide modal if it's not processing anymore
+        if (!isConfirming && !isPending) {
             setShowModal(false);
         }
-    }
+    }, [isConfirming, isPending]);
 
-    const canSign = dogeWalletConnected && evmWalletConnected && parseFloat(dogeAmount) > 0 && lockingPeriod !== 0 && !isPeriodSigned && !isProcessing;
-    const canMint = isPeriodSigned && !isProcessing;
+    useEffect(() => {
+        if (isConfirmed) {
+            setAmount('');
+            setShowSuccessCard(true);
+            refetchMintableAmount();
+        }
+    }, [isConfirmed, refetchMintableAmount]);
+
+    useEffect(() => {
+        if (error) {
+            setShowModal(false);
+            alert(`Transaction Failed: ${getRpcErrorMessage(error)}`);
+        }
+    }, [error]);
+
+
+    const isMintDisabled = !isConnected || isPending || isConfirming || !amount || isAmountInvalid || isWhitelisted === false || isCheckingWhitelist;
+    const isInputDisabled = isPending || isConfirming || !isConnected || isWhitelisted === false || isCheckingWhitelist;
 
     return (
-        <div className="max-w-2xl mx-auto p-4 md:p-8 animate-fade-in">
+        <div className="max-w-xl mx-auto p-4 md:p-6 animate-fade-in">
             <Link href="/vault" className="text-muted-foreground hover:text-foreground mb-6 flex items-center gap-2">
-                &larr; Back to Vaults
+                <ArrowLeft size={16} /> Back to Vaults
             </Link>
-            <div className="bg-background/70 border border-border rounded-2xl p-6 shadow-xl">
-                <h2 className="text-2xl font-bold text-foreground mb-1">Deposit {vault.asset}</h2>
-                <p className="text-muted-foreground mb-6">You will receive t-DOGE, a tokenized version of your deposit.</p>
 
-                <div className="space-y-4">
-                    <div>
-                        <Label className="text-sm font-medium text-muted-foreground block mb-2">Amount to lock</Label>
-                        <div className="relative">
-                            <input
-                                type="number"
-                                placeholder="0.00"
-                                value={dogeAmount}
-                                onChange={(e) => setDogeAmount(e.target.value)}
-                                disabled={isPeriodSigned}
-                                className="w-full bg-secondary border border-border rounded-lg p-3 text-foreground text-xl focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none disabled:bg-muted disabled:cursor-not-allowed"
-                            />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">{vault.asset}</span>
+            {showSuccessCard ? (
+                <MintSuccessCard
+                    amount={lastMintedAmount}
+                    asset={config.asset}
+                    onMintAgain={() => setShowSuccessCard(false)}
+                    onViewTx={() => window.open(`https://sepolia.etherscan.io/tx/${hash}`, '_blank')}
+                />
+            ) : (
+                <div className="bg-background/70 border border-border rounded-2xl p-6 shadow-xl">
+                    <div className="flex justify-between items-start mb-5">
+                        <h2 className="text-2xl font-bold text-foreground">Mint {config.asset}</h2>
+                        <ConnectButton showBalance={false} accountStatus="address" />
+                    </div>
+                    <div className="space-y-4">
+                        <div>
+                             <div className="flex justify-between items-center mb-2">
+                                <Label className="text-sm font-medium text-muted-foreground">Amount to Mint</Label>
+                                {isConnected && isWhitelisted === true && (
+                                    <span className="text-xs text-muted-foreground">
+                                        Available: {Number(formattedMintableAmount).toFixed(4)}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="relative">
+                                <Input
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    disabled={isInputDisabled}
+                                    className={`w-full bg-secondary border rounded-lg p-3 text-foreground text-xl focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none disabled:bg-muted disabled:cursor-not-allowed ${isAmountInvalid ? 'border-red-500' : 'border-border'}`}
+                                />
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
+                                   <span className="text-muted-foreground font-bold">{config.asset}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-auto p-1 text-primary hover:bg-primary/10"
+                                      onClick={() => setAmount(formattedMintableAmount)}
+                                      disabled={isInputDisabled || formattedMintableAmount === '0'}
+                                    >
+                                        Max
+                                    </Button>
+                                </div>
+                            </div>
+                             {isAmountInvalid && (
+                                 <p className="text-xs text-red-500 mt-2">Amount exceeds your minting allowance.</p>
+                             )}
+                            {isConnected && isWhitelisted === false && !isCheckingWhitelist && (
+                                <div className="flex items-center gap-2 text-sm text-yellow-500 mt-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                                    <XCircle size={16} />
+                                    <span>Your address is not whitelisted for minting.</span>
+                                </div>
+                            )}
                         </div>
                     </div>
-
-                    <div className="space-y-4 pt-2">
-                        <Label htmlFor="locking-period" className="text-sm font-medium text-muted-foreground">Locking Period: <span className="font-bold text-primary">{lockingPeriod} Months</span></Label>
-                        <Slider
-                          id="locking-period"
-                          min={3}
-                          max={9}
-                          step={3}
-                          value={[lockingPeriod]}
-                          onValueChange={(value) => setLockingPeriod(value[0])}
-                          disabled={isPeriodSigned}
-                          className="disabled:cursor-not-allowed"
-                        />
-                      </div>
-
-                    <div>
-                        <Label className="text-sm font-medium text-muted-foreground block mb-2">Amount you will receive</Label>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                readOnly
-                                value={tDogeAmount}
-                                placeholder="0.00"
-                                className="w-full bg-background border border-border rounded-lg p-3 text-foreground text-xl"
-                            />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">t-DOGE</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground/80 mt-1 text-center">1 {vault.asset} = 1 t-DOGE</p>
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-6">
+                        <Button
+                            onClick={handleMint}
+                            disabled={isMintDisabled}
+                        >
+                            {isCheckingWhitelist ? 'Checking Whitelist...' : isPending ? 'Check Wallet...' : isConfirming ? 'Processing...' : `Mint ${config.asset}`}
+                        </Button>
                     </div>
                 </div>
-
-                <div className="my-6 space-y-3">
-                    <WalletConnectButton walletName="DOGE Wallet" onConnect={handleConnectDoge} isConnected={dogeWalletConnected} address={dogeAddress} />
-                    <WalletConnectButton walletName="EVM Wallet" onConnect={handleConnectEvm} isConnected={evmWalletConnected} address={evmAddress} />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    <button
-                        onClick={handleSign}
-                        disabled={!canSign}
-                        className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-lg hover:bg-primary/90 transition-all disabled:bg-muted disabled:cursor-not-allowed disabled:text-muted-foreground"
-                    >
-                         {processingStep === 'signing' ? 'Signing...' : isPeriodSigned ? 'Signed' : '1. Sign & Lock'}
-                    </button>
-                    <button
-                        onClick={handleMint}
-                        disabled={!canMint}
-                        className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-lg hover:bg-primary/90 transition-all disabled:bg-muted disabled:cursor-not-allowed disabled:text-muted-foreground"
-                    >
-                        {processingStep === 'minting' ? 'Minting...' : '2. Mint t-DOGE'}
-                    </button>
-                </div>
-
-            </div>
+            )}
+            
             <AlertDialog open={showModal} onOpenChange={setShowModal}>
-              <AlertDialogContent className="bg-background border-border rounded-2xl shadow-2xl p-6 w-full max-w-md">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-center text-2xl font-bold text-foreground mb-4">
-                     {modalContent.title}
-                  </AlertDialogTitle>
-                   <AlertDialogDescription asChild>
-                     <div className="text-center text-muted-foreground">
-                       <div className="flex justify-center items-center my-8">
-                         {!modalContent.isSuccess ? (
-                           <span className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
-                         ) : (
-                            <span className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
-                              {modalContent.title.includes('Minting') ? <Zap size={32} className="text-green-400" /> : <CheckCircle2 size={32} className="text-green-400" />}
-                            </span>
-                         )}
-                       </div>
-                       <span>
-                          {modalContent.description}
-                       </span>
-                     </div>
-                   </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  {modalContent.isSuccess && (
-                      <AlertDialogAction onClick={closeModal} className="w-full bg-primary text-primary-foreground font-semibold py-2 px-6 rounded-lg hover:bg-primary/90">
-                          Done
-                      </AlertDialogAction>
-                  )}
-                </AlertDialogFooter>
-              </AlertDialogContent>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                       <AlertDialogTitle className="text-center text-2xl font-bold text-foreground mb-4">{modalContent.title}</AlertDialogTitle>
+                       <AlertDialogDescription asChild>
+                           <div className="text-center text-muted-foreground">
+                               <div className="flex justify-center items-center my-8">
+                                   <span className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
+                               </div>
+                               <span className="break-words">{modalContent.description}</span>
+                           </div>
+                       </AlertDialogDescription>
+                    </AlertDialogHeader>
+                </AlertDialogContent>
             </AlertDialog>
         </div>
     );

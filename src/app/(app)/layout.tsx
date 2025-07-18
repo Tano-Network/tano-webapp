@@ -16,7 +16,7 @@ function AppHeader() {
     { href: '/earn', label: 'Earn' },
   ];
 
-  const navigateTo = (targetPage) => {
+  const navigateTo = (targetPage: string) => {
     setIsMobileMenuOpen(false);
   }
 

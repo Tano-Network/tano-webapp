@@ -3,12 +3,12 @@ import { useRouter } from 'next/navigation';
 import { Lock, Coins } from 'lucide-react';
 
 const vaults = [
-    { id: 'doge', asset: 'DOGE', icon: 'Ð', totalLocked: '150.5M DOGE', apy: '12.8%', myDeposit: '0.00' },
-    { id: 'wbtc', asset: 'wBTC', icon: '₿', totalLocked: '250.2 wBTC', apy: '8.2%', myDeposit: '0.00' },
-    { id: 'eth', asset: 'ETH', icon: 'Ξ', totalLocked: '5,120 ETH', apy: '9.5%', myDeposit: '0.00' },
+    { id: 'doge', asset: 'DOGE', icon: 'Ð', totalLocked: '150.5M tDOGE', apy: '12.8%', myDeposit: '0.00' },
+    { id: 'litecoin', asset: 'LTC', icon: 'Ł', totalLocked: '250.2 tltc', apy: '8.2%', myDeposit: '0.00' },
+    { id: 'bitcoin_cash', asset: 'BCH', icon: '₿', totalLocked: '5,120 tbch', apy: '9.5%', myDeposit: '0.00' },
 ];
 
-const StatCard = ({ icon, label, value }) => (
+const StatCard = ({ icon, label, value }:any) => (
     <div className="bg-card p-4 rounded-lg flex items-center gap-4 border">
       <div className="bg-primary/10 p-3 rounded-xl border border-primary/20">
         {icon}
@@ -23,7 +23,7 @@ const StatCard = ({ icon, label, value }) => (
 export default function VaultsPage() {
     const router = useRouter();
 
-    const onSelectVault = (vault) => {
+    const onSelectVault = (vault:any) => {
         router.push(`/vault/${vault.id}`);
     };
 
@@ -39,7 +39,7 @@ export default function VaultsPage() {
                 />
                 <StatCard
                     icon={<Coins size={24} className="text-primary" />}
-                    label="Total t-DOGE Minted"
+                    label="Total tDOGE Minted"
                     value="148.2M t-DOGE"
                 />
             </div>
@@ -71,7 +71,7 @@ export default function VaultsPage() {
                                     <td className="p-4">{vault.myDeposit}</td>
                                     <td className="p-4 text-right">
                                         <button onClick={() => onSelectVault(vault)} className="bg-primary text-primary-foreground font-semibold py-2 px-4 rounded-lg hover:bg-primary/90 transition-all">
-                                            Deposit
+                                           Mint
                                         </button>
                                     </td>
                                 </tr>
