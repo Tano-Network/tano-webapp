@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState ,use} from "react"
+import { useEffect, useState } from "react"
 import { parseUnits, formatUnits } from "viem"
 import { useAccount, useChainId, useWriteContract } from "wagmi"
 import { readContract, waitForTransactionReceipt } from "wagmi/actions"
@@ -83,10 +83,9 @@ const getVaultData = (id: string) => {
   }
 }
 
-
 export default function VaultDepositPage({ params }: { params: Promise<{ id: string }> }) {
-  const {id}  = use(params)
-  const vault = getVaultData(id)
+  const [vaultId, setVaultId] = useState<string | null>(null)
+  const [vault, setVault] = useState<ReturnType<typeof getVaultData> | null>(null)
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const { toast } = useToast()
@@ -113,120 +112,91 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
   const explorerUrl =
     EXPLORER_URLS[chainId as keyof typeof EXPLORER_URLS] || EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA]
 
-  const refreshState = async () => {
-    if (!address) return
-    try {
-      const [mintable, minted, balance] = await Promise.all([
-        readContract(config, {
-          address: vault.contractAddress as `0x${string}`,
-          abi: assetManagementAbi,
-          functionName: "getMintableAmount",
-          args: [address],
-        }),
-        readContract(config, {
-          address: vault.contractAddress as `0x${string}`,
-          abi: assetManagementAbi,
-          functionName: "getMintedAmount",
-          args: [address],
-        }),
-        readContract(config, {
-          address: vault.assetAddress as `0x${string}`,
-          abi: assetAbi,
-          functionName: "balanceOf",
-          args: [address],
-        }),
-      ])
-      setMintableAmount(mintable as bigint)
-      setMintedAmount(minted as bigint)
-      setCurrentAssetBalance(balance as bigint)
-    } catch (err) {
-      console.error("refreshState error:", err)
-    }
-  }
-
   useEffect(() => {
-    const fetchInitial = async () => {
-      if (!isConnected || !address || !isCorrectNetwork) return
+    let mounted = true
 
-      try {
-        const [whitelisted, totalSupply] = await Promise.all([
-          readContract(config, {
-            address: vault.contractAddress as `0x${string}`,
-            abi: assetManagementAbi,
-            functionName: "isWhitelisted",
-            args: [address],
-          }),
-          readContract(config, {
-            address: vault.assetAddress as `0x${string}`,
-            abi: assetAbi,
-            functionName: "totalSupply",
-          }),
-        ])
-        setIsWhitelisted(whitelisted as boolean)
-        setError(null)
-      } catch (err) {
-        console.error(err)
-        setError("Contract read failed")
+    const initialize = async () => {
+      // Resolve params and set vaultId
+      const { id } = await params
+      if (!mounted) return
+      setVaultId(id)
+      const vaultData = getVaultData(id)
+      setVault(vaultData)
+
+      if (!isConnected || !address || !isCorrectNetwork || vaultData.asset === "Unknown") {
+        setError(vaultData.asset === "Unknown" ? "Vault not found" : null)
+        setIsLoading(false)
+        return
       }
-    }
 
-    fetchInitial()
-  }, [isConnected, address, isCorrectNetwork, vault])
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!address || !isCorrectNetwork) return
       setIsLoading(true)
       try {
-        const [whitelisted, mintable, allowanceAmt, mintedAmt, curBal] = await Promise.all([
+        const [whitelisted, mintable, allowanceAmt, mintedAmt, curBal, totalSupply] = await Promise.all([
           readContract(config, {
-            address: vault.contractAddress as `0x${string}`,
+            address: vaultData.contractAddress as `0x${string}`,
             abi: assetManagementAbi,
             functionName: "isWhitelisted",
             args: [address],
           }),
           readContract(config, {
-            address: vault.contractAddress as `0x${string}`,
+            address: vaultData.contractAddress as `0x${string}`,
             abi: assetManagementAbi,
             functionName: "getMintableAmount",
             args: [address],
           }),
           readContract(config, {
-            address: vault.contractAddress as `0x${string}`,
+            address: vaultData.contractAddress as `0x${string}`,
             abi: assetManagementAbi,
             functionName: "getAllowance",
             args: [address],
           }),
           readContract(config, {
-            address: vault.contractAddress as `0x${string}`,
+            address: vaultData.contractAddress as `0x${string}`,
             abi: assetManagementAbi,
             functionName: "getMintedAmount",
             args: [address],
           }),
           readContract(config, {
-            address: vault.assetAddress as `0x${string}`,
+            address: vaultData.assetAddress as `0x${string}`,
             abi: assetAbi,
             functionName: "balanceOf",
             args: [address],
           }),
+          readContract(config, {
+            address: vaultData.assetAddress as `0x${string}`,
+            abi: assetAbi,
+            functionName: "totalSupply",
+          }),
         ])
+
+        if (!mounted) return
         setIsWhitelisted(whitelisted as boolean)
         setMintableAmount(mintable as bigint)
         setAllowance(allowanceAmt as bigint)
         setMintedAmount(mintedAmt as bigint)
         setCurrentAssetBalance(curBal as bigint)
+        setError(null)
       } catch (err) {
-        console.error(err)
+        console.error("Data fetch error:", err)
+        if (!mounted) return
         setError("Could not fetch vault data")
       } finally {
-        setIsLoading(false)
+        if (mounted) setIsLoading(false)
       }
     }
 
-    fetchData()
-  }, [vault, address, isCorrectNetwork])
+    initialize()
+
+    return () => {
+      mounted = false
+    }
+  }, [params, isConnected, address, isCorrectNetwork])
 
   const handleMint = async () => {
+    if (!isConnected || !address || !isCorrectNetwork || !vault) {
+      toast({ title: "Error", description: "Connect wallet and switch to Sepolia", variant: "destructive" })
+      return
+    }
     if (!amount || parseFloat(amount) <= 0) {
       toast({ title: "Invalid", description: "Enter a valid amount", variant: "destructive" })
       return
@@ -239,7 +209,7 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
 
     setIsProcessing(true)
     setShowModal(true)
-    setModalContent({ title: "Preparing Transaction", description: "Please confirm in your wallet...", isSuccess: false , txHash: undefined })
+    setModalContent({ title: "Preparing Transaction", description: "Please confirm in your wallet...", isSuccess: false, txHash: undefined })
 
     try {
       const amountBigInt = parseUnits(amount, 18)
@@ -262,15 +232,43 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
 
       setModalContent({ title: "Mint Successful!", description: `Successfully minted ${amount} ${vault.asset}`, isSuccess: true, txHash: hash })
       setAmount("")
-      await refreshState()
+
+      // Refresh state
+      if (!address || !isCorrectNetwork) return
+      try {
+        const [mintable, minted, balance] = await Promise.all([
+          readContract(config, {
+            address: vault.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "getMintableAmount",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vault.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "getMintedAmount",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vault.assetAddress as `0x${string}`,
+            abi: assetAbi,
+            functionName: "balanceOf",
+            args: [address],
+          }),
+        ])
+        setMintableAmount(mintable as bigint)
+        setMintedAmount(minted as bigint)
+        setCurrentAssetBalance(balance as bigint)
+      } catch (err) {
+        console.error("Refresh state error:", err)
+      }
     } catch (err: any) {
       console.error("Mint error:", err)
       const message =
         err?.message?.includes("user rejected")
           ? "Transaction cancelled"
           : err?.message || "Mint failed"
-      setModalContent({ title: "Failed", description: message, isSuccess: false , txHash: undefined })
-      toast({ title: "Mint Failed", description: message, variant: "destructive" })
+      setModalContent({ title: "Failed", description: message, isSuccess: false, txHash: undefined })
     } finally {
       setIsProcessing(false)
     }
@@ -299,14 +297,14 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
                 <div
                   className={cn(
                     "w-12 h-12 bg-gradient-to-br text-white rounded-full flex items-center justify-center text-xl font-bold",
-                    vault.color,
+                    vault?.color,
                   )}
                 >
-                  {vault.icon}
+                  {vault?.icon}
                 </div>
                 <div>
-                  <CardTitle className="text-2xl">Mint {vault.asset}</CardTitle>
-                  <CardDescription>{vault.description}</CardDescription>
+                  <CardTitle className="text-2xl">Mint {vault?.asset}</CardTitle>
+                  <CardDescription>{vault?.description}</CardDescription>
                 </div>
                 <Badge variant="default" className="ml-auto">
                   Sepolia Testnet
@@ -330,15 +328,15 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
                     disabled={isLoading || isProcessing}
                     step="0.01"
                     min="0"
-                    max={(formatUnits(mintedAmount, 18))}
+                    max={formatUnits(mintableAmount, 18)}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <span className="text-muted-foreground font-medium">{vault.asset}</span>
+                    <span className="text-muted-foreground font-medium">{vault?.asset}</span>
                   </div>
                 </div>
                 <div className="flex justify-between mt-2 text-sm text-muted-foreground">
                   <span>
-                    Available: {Number((formatUnits(mintableAmount, 18))).toFixed(4)} {vault.asset}
+                    Available: {Number(formatUnits(mintableAmount, 18)).toFixed(4)} {vault?.asset}
                   </span>
                   <Button
                     variant="link"
@@ -371,7 +369,7 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
                     Processing...
                   </>
                 ) : (
-                  `Mint ${vault.asset}`
+                  `Mint ${vault?.asset}`
                 )}
               </Button>
             </CardContent>
@@ -399,21 +397,21 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
                   <div>
                     <p className="text-sm text-muted-foreground">Current Balance</p>
                     <p className="text-lg font-semibold">
-                      {Number(formatUnits(currentAssetBalance, 18)).toFixed(4)} {vault.asset}
+                      {Number(formatUnits(currentAssetBalance, 18)).toFixed(4)} {vault?.asset}
                     </p>
                   </div>
 
                   <div>
                     <p className="text-sm text-muted-foreground">Mintable Amount</p>
                     <p className="text-lg font-semibold">
-                      {Number(formatUnits(mintableAmount, 18)).toFixed(4)} {vault.asset}
+                      {Number(formatUnits(mintableAmount, 18)).toFixed(4)} {vault?.asset}
                     </p>
                   </div>
 
                   <div>
                     <p className="text-sm text-muted-foreground">Total Allowance</p>
                     <p className="text-lg font-semibold">
-                      {Number(formatUnits(allowance, 18)).toFixed(4)} {vault.asset}
+                      {Number(formatUnits(allowance, 18)).toFixed(4)} {vault?.asset}
                     </p>
                   </div>
 
@@ -440,11 +438,11 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Asset</span>
-                <span className="font-medium">{vault.asset}</span>
+                <span className="font-medium">{vault?.asset}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status</span>
-                <Badge variant="default" >
+                <Badge variant="default">
                   {isWhitelisted ? "Active" : "Restricted"}
                 </Badge>
               </div>
@@ -455,7 +453,7 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Contract</span>
                 <span className="font-mono text-xs">
-                  {vault.contractAddress.slice(0, 6)}...{vault.contractAddress.slice(-4)}
+                  {vault?.contractAddress.slice(0, 6)}...{vault?.contractAddress.slice(-4)}
                 </span>
               </div>
             </CardContent>
