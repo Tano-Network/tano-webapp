@@ -283,7 +283,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { parseUnits, formatUnits } from 'viem';
-import { CheckCircle2, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, ArrowLeft, XCircle } from 'lucide-react'; // ✨ Added XCircle for the message
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 
@@ -294,6 +294,15 @@ import AssetManagerABI from '../../../../utils/abi/AssetManagerABI.json';
 import { useParams } from 'next/navigation';
 
 // --- (Helper functions and constants remain the same) ---
+// IMPORTANT: Make sure your AssetManagerABI.json includes the 'isWhitelisted' function.
+// Example entry to add to your ABI array:
+// {
+//   "inputs": [{ "internalType": "address", "name": "user", "type": "address" }],
+//   "name": "isWhitelisted",
+//   "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+//   "stateMutability": "view",
+//   "type": "function"
+// }
 const assetManagerContractAddress = '0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48';
 const assetManagerAbi = AssetManagerABI;
 
@@ -314,7 +323,7 @@ const getVaultData = (id: string | string[]) => {
     return vaults[key] || vaults.doge;
 };
 
-// --- Success Card Component ---
+// --- Success Card Component (remains the same) ---
 const MintSuccessCard = ({ amount, asset, onMintAgain, onViewTx }:any) => (
     <div className="bg-background/70 border border-border rounded-2xl p-6 shadow-xl text-center animate-fade-in">
         <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -326,7 +335,7 @@ const MintSuccessCard = ({ amount, asset, onMintAgain, onViewTx }:any) => (
         </p>
         <div className="flex flex-col gap-3">
              <Button onClick={onViewTx}>
-                View Transaction
+                 View Transaction
             </Button>
             <Button variant="outline" onClick={onMintAgain}>
                 Mint More
@@ -347,11 +356,22 @@ export default function VaultDepositPage() {
     const [modalContent, setModalContent] = useState({ title: '', description: '' });
     const [lastMintedAmount, setLastMintedAmount] = useState('');
     const [showSuccessCard, setShowSuccessCard] = useState(false);
-    
+
     // --- Hooks ---
     const { address, isConnected } = useAccount();
     const { data: hash, error, writeContract, isPending } = useWriteContract();
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+
+    // ✨ 1. Read contract to check if the user is whitelisted
+    const { data: isWhitelisted, isLoading: isCheckingWhitelist } = useReadContract({
+        address: assetManagerContractAddress,
+        abi: assetManagerAbi,
+        functionName: 'isWhitelisted',
+        args: [address],
+        query: {
+            enabled: isConnected && !!address, // Only run query if wallet is connected
+        },
+    });
 
     const { data: mintableAmountRaw, refetch: refetchMintableAmount } = useReadContract({
         address: assetManagerContractAddress,
@@ -359,12 +379,12 @@ export default function VaultDepositPage() {
         functionName: 'getMintableAmount',
         args: [address],
         query: {
-            enabled: isConnected && !!address,
+            enabled: isConnected && !!address && isWhitelisted === true, // ✨ Only fetch amount if whitelisted
         },
     });
 
     const formattedMintableAmount = useMemo(() => mintableAmountRaw ? formatUnits(mintableAmountRaw as bigint, 18) : '0', [mintableAmountRaw]);
-    
+
     const isAmountInvalid = useMemo(() => {
         if (!dogeAmount || !mintableAmountRaw) return false;
         try {
@@ -376,7 +396,11 @@ export default function VaultDepositPage() {
 
     // --- Event Handlers ---
     const handleMint = () => {
-        // ✨ Replaced toasts with alerts for user input errors
+        // ✨ 2. Add a guard clause to prevent minting if not whitelisted
+        if (!isWhitelisted) {
+            alert("Your address is not whitelisted for minting.");
+            return;
+        }
         if (isAmountInvalid) {
             alert(`Amount exceeds your minting allowance.`);
             return;
@@ -385,7 +409,7 @@ export default function VaultDepositPage() {
             alert("Please connect your wallet and enter a valid amount.");
             return;
         }
-        
+
         setLastMintedAmount(dogeAmount);
         writeContract({
             address: assetManagerContractAddress,
@@ -394,8 +418,8 @@ export default function VaultDepositPage() {
             args: [parseUnits(dogeAmount, 18)],
         });
     }
-    
-    // --- useEffects for Modals and State Changes ---
+
+    // --- (useEffect hooks remain the same) ---
     useEffect(() => {
         if (isConfirming || isPending) {
             setShowModal(true);
@@ -416,13 +440,16 @@ export default function VaultDepositPage() {
     }, [isConfirmed, refetchMintableAmount]);
 
     useEffect(() => {
-        // ✨ Replaced toast with an alert for transaction errors
         if (error) {
             setShowModal(false);
             alert(`Transaction Failed: ${getRpcErrorMessage(error)}`);
         }
     }, [error]);
 
+
+    // ✨ 3. Determine if the UI should be disabled based on whitelist status
+    const isMintDisabled = !isConnected || isPending || isConfirming || !dogeAmount || isAmountInvalid || !isWhitelisted || isCheckingWhitelist;
+    const isInputDisabled = isPending || isConfirming || !isConnected || !isWhitelisted || isCheckingWhitelist;
 
     return (
         <div className="max-w-2xl mx-auto p-4 md:p-8 animate-fade-in">
@@ -447,7 +474,7 @@ export default function VaultDepositPage() {
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <Label className="text-sm font-medium text-muted-foreground">Amount to Mint</Label>
-                                {isConnected && (
+                                {isConnected && isWhitelisted && ( // ✨ Show available amount only if whitelisted
                                     <span className="text-xs text-muted-foreground">
                                         Available: {Number(formattedMintableAmount).toFixed(4)}
                                     </span>
@@ -459,38 +486,46 @@ export default function VaultDepositPage() {
                                     placeholder="0.00"
                                     value={dogeAmount}
                                     onChange={(e) => setDogeAmount(e.target.value)}
-                                    disabled={isPending || isConfirming || !isConnected}
+                                    disabled={isInputDisabled} // ✨ Use combined disabled state
                                     className={`w-full bg-secondary border rounded-lg p-3 text-foreground text-xl focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none disabled:bg-muted disabled:cursor-not-allowed ${isAmountInvalid ? 'border-red-500' : 'border-border'}`}
                                 />
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
                                    <span className="text-muted-foreground font-bold">{vault.asset}</span>
-                                   <Button
+                                    <Button
                                       variant="ghost"
                                       size="sm"
                                       className="h-auto p-1 text-primary hover:bg-primary/10"
                                       onClick={() => setDogeAmount(formattedMintableAmount)}
-                                      disabled={!isConnected || formattedMintableAmount === '0' || isPending || isConfirming}
+                                      disabled={isInputDisabled || formattedMintableAmount === '0'} // ✨ Use combined disabled state
                                     >
                                         Max
                                     </Button>
                                 </div>
                             </div>
-                            {isAmountInvalid && (
+                             {isAmountInvalid && (
                                  <p className="text-xs text-red-500 mt-2">Amount exceeds your minting allowance.</p>
+                             )}
+                            {/* ✨ 4. Show a message if the connected address is not whitelisted */}
+                            {isConnected && !isCheckingWhitelist && !isWhitelisted && (
+                                <div className="flex items-center gap-2 text-sm text-yellow-500 mt-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                                    <XCircle size={16} />
+                                    <span>Your address is not whitelisted for minting.</span>
+                                </div>
                             )}
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-6">
                         <Button
                             onClick={handleMint}
-                            disabled={!isConnected || isPending || isConfirming || !dogeAmount || isAmountInvalid}
+                            disabled={isMintDisabled} // ✨ Use combined disabled state for the mint button
                         >
-                            {isPending ? 'Check Wallet...' : isConfirming ? 'Processing...' : `Mint ${vault.asset}`}
+                            {isCheckingWhitelist ? 'Checking Whitelist...' : isPending ? 'Check Wallet...' : isConfirming ? 'Processing...' : `Mint ${vault.asset}`}
                         </Button>
                     </div>
                 </div>
             )}
-            
+
+            {/* (AlertDialog for transactions remains the same) */}
             <AlertDialog open={showModal} onOpenChange={setShowModal}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
