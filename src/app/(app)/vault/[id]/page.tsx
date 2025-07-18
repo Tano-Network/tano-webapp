@@ -395,24 +395,24 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
               ) : (
                 <>
                   <div>
-                    <p className="text-sm text-muted-foreground">Current Balance</p>
-                    <p className="text-lg font-semibold">
+                    <div className="text-sm text-muted-foreground">Current Balance</div>
+                    <div className="text-lg font-semibold">
                       {Number(formatUnits(currentAssetBalance, 18)).toFixed(4)} {vault?.asset}
-                    </p>
+                    </div>
                   </div>
 
                   <div>
-                    <p className="text-sm text-muted-foreground">Mintable Amount</p>
-                    <p className="text-lg font-semibold">
+                    <div className="text-sm text-muted-foreground">Mintable Amount</div>
+                    <div className="text-lg font-semibold">
                       {Number(formatUnits(mintableAmount, 18)).toFixed(4)} {vault?.asset}
-                    </p>
+                    </div>
                   </div>
 
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Allowance</p>
-                    <p className="text-lg font-semibold">
+                    <div className="text-sm text-muted-foreground">Total Allowance</div>
+                    <div className="text-lg font-semibold">
                       {Number(formatUnits(allowance, 18)).toFixed(4)} {vault?.asset}
-                    </p>
+                    </div>
                   </div>
 
                   <div>
@@ -421,10 +421,10 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
                       <span className="font-medium">{usagePercentage.toFixed(1)}%</span>
                     </div>
                     <Progress value={usagePercentage} className="h-2" />
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       {Number(formatUnits(mintedAmount, 18)).toFixed(4)} /{" "}
                       {Number(formatUnits(allowance, 18)).toFixed(4)} used
-                    </p>
+                    </div>
                   </div>
                 </>
               )}
@@ -472,7 +472,7 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
                 ) : (
                   <CheckCircle2 size={40} className="text-green-500" />
                 )}
-                <p className="text-center">{modalContent.description}</p>
+                <div className="text-center">{modalContent.description}</div>
                 {modalContent.isSuccess && modalContent.txHash && (
                   <Button asChild variant="outline" size="sm">
                     <a

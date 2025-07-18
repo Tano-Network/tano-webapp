@@ -107,9 +107,9 @@ const StatCard = ({ icon, label, value, description, isLoading = false, delay = 
             {value}
           </div>
           {description && (
-            <p className="text-xs text-muted-foreground mt-1 group-hover:text-muted-foreground/80 transition-colors">
+            <div className="text-xs text-muted-foreground mt-1 group-hover:text-muted-foreground/80 transition-colors">
               {description}
-            </p>
+            </div>
           )}
         </>
       )}
@@ -219,22 +219,22 @@ const VaultCard = ({ vault, isWhitelisted, onSelect, isLoading, index }: VaultCa
       <CardContent className="space-y-4 relative">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Total Locked</p>
-            <p className="font-semibold group-hover:text-primary transition-colors">{vault.totalLocked}</p>
+            <div className="text-sm text-muted-foreground">Total Locked</div>
+            <div className="font-semibold group-hover:text-primary transition-colors">{vault.totalLocked}</div>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">APY</p>
-            <p className="font-semibold text-green-600 dark:text-green-400 group-hover:text-green-500 transition-colors">
+            <div className="text-sm text-muted-foreground">APY</div>
+            <div className="font-semibold text-green-600 dark:text-green-400 group-hover:text-green-500 transition-colors">
               {vault.apy}
-            </p>
+            </div>
           </div>
         </div>
 
         <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">My Minted</p>
-          <p className="font-semibold">
+          <div className="text-sm text-muted-foreground">My Minted</div>
+          <div className="font-semibold">
             {vault.minted} {vault.asset}
-          </p>
+          </div>
         </div>
 
         <Button
@@ -415,9 +415,9 @@ async function checkAllVaults() {
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
           Vaults Dashboard
         </h1>
-        <p className="text-muted-foreground text-lg md:text-xl max-w-2xl">
+        <div className="text-muted-foreground text-lg md:text-xl max-w-2xl">
           Deposit your crypto assets and earn yield through our secure, audited vaults
-        </p>
+        </div>
       </div>
 
       {/* Network Warning */}

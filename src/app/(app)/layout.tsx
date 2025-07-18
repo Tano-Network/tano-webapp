@@ -211,7 +211,7 @@ function WalletGuard({ children }: { children: React.ReactNode }) {
       <div className="relative min-h-full">
         <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-50">
           <LoadingSpinner size="lg" />
-          <p className="text-muted-foreground">Connecting wallet...</p>
+          <div className="text-muted-foreground">Connecting wallet...</div>
         </div>
       </div>
     )
@@ -227,9 +227,9 @@ function WalletGuard({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <h2 className="text-xl font-semibold text-foreground">Wallet Not Connected</h2>
-        <p className="text-muted-foreground text-sm">
+        <div className="text-muted-foreground text-sm">
           Please connect your wallet to continue using the app.
-        </p>
+        </div>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/" className="w-full sm:w-auto">
             <Button variant="outline" className="w-full">
@@ -262,7 +262,7 @@ export default function AppLayout({
       </Suspense>
       <main className="flex-1 relative">
         <WalletGuard>
-          <PageTransition>{children}</PageTransition>
+          <divageTransition>{children}</PageTransition>
         </WalletGuard>
       </main>
     </div>

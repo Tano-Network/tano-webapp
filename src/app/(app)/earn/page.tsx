@@ -117,9 +117,9 @@ const StatCard = ({ icon, label, value, description, isLoading = false, delay = 
             {value}
           </div>
           {description && (
-            <p className="text-xs text-muted-foreground mt-1 group-hover:text-muted-foreground/80 transition-colors">
+            <div className="text-xs text-muted-foreground mt-1 group-hover:text-muted-foreground/80 transition-colors">
               {description}
-            </p>
+            </div>
           )}
         </>
       )}
@@ -212,35 +212,35 @@ const EarnPoolCard = ({ pool, onSelect, isLoading, index }: EarnPoolCardProps) =
       <CardContent className="space-y-4 relative">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Total Staked</p>
+            <div className="text-sm text-muted-foreground">Total Staked</div>
             {isLoading ? (
               <Skeleton className="h-6 w-24" />
             ) : (
-              <p className="font-semibold group-hover:text-primary transition-colors">
+              <div className="font-semibold group-hover:text-primary transition-colors">
                 {Number.parseFloat(pool.totalStaked).toFixed(2)} {pool.asset}
-              </p>
+              </div>
             )}
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">APY</p>
+            <div className="text-sm text-muted-foreground">APY</div>
             {isLoading ? (
               <Skeleton className="h-6 w-16" />
             ) : (
-              <p className="font-semibold text-green-600 dark:text-green-400 group-hover:text-green-500 transition-colors">
+              <div className="font-semibold text-green-600 dark:text-green-400 group-hover:text-green-500 transition-colors">
                 {pool.apy}
-              </p>
+              </div>
             )}
           </div>
         </div>
 
         <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">My Deposit</p>
+          <div className="text-sm text-muted-foreground">My Deposit</div>
           {isLoading ? (
             <Skeleton className="h-6 w-20" />
           ) : (
-            <p className="font-semibold">
+            <div className="font-semibold">
               {Number.parseFloat(pool.myDeposit).toFixed(2)} {pool.asset}
-            </p>
+            </div>
           )}
         </div>
 
@@ -398,9 +398,9 @@ export default function EarnDashboardPage() {
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
           Earn Dashboard
         </h1>
-        <p className="text-muted-foreground text-lg md:text-xl max-w-2xl">
+        <div className="text-muted-foreground text-lg md:text-xl max-w-2xl">
           Stake your assets in various pools to earn passive income
-        </p>
+        </div>
       </div>
 
       {/* Wallet Info Alert */}
@@ -480,7 +480,7 @@ export default function EarnDashboardPage() {
               {isLoadingData ? (
                 <Skeleton className="h-8 w-32" />
               ) : (
-                <p className="text-2xl font-bold">{Number.parseFloat(totalStakedDOGE).toFixed(2)} tDOGE</p>
+                <div className="text-2xl font-bold">{Number.parseFloat(totalStakedDOGE).toFixed(2)} tDOGE</div>
               )}
             </CardContent>
           </Card>
@@ -492,7 +492,7 @@ export default function EarnDashboardPage() {
               {isLoadingData ? (
                 <Skeleton className="h-8 w-32" />
               ) : (
-                <p className="text-2xl font-bold">{Number.parseFloat(totalStakedLTC).toFixed(2)} tLTC</p>
+                <div className="text-2xl font-bold">{Number.parseFloat(totalStakedLTC).toFixed(2)} tLTC</div>
               )}
             </CardContent>
           </Card>
@@ -504,7 +504,7 @@ export default function EarnDashboardPage() {
               {isLoadingData ? (
                 <Skeleton className="h-8 w-32" />
               ) : (
-                <p className="text-2xl font-bold">{Number.parseFloat(totalStakedBCH).toFixed(2)} tBCH</p>
+                <div className="text-2xl font-bold">{Number.parseFloat(totalStakedBCH).toFixed(2)} tBCH</div>
               )}
             </CardContent>
           </Card>

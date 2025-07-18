@@ -81,8 +81,8 @@ const CommandEmpty = React.forwardRef<
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName
 
 const CommandGroup = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Group>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
+  React.ElementRef<typeof CommandPrimitive.Groudiv>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Groudiv>
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.Group
     ref={ref}

@@ -278,7 +278,7 @@ const SidebarTrigger = React.forwardRef<
       }}
       {...props}
     >
-      <PanelLeft />
+      <divanelLeft />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )
@@ -578,7 +578,7 @@ const SidebarMenuButton = React.forwardRef<
     }
 
     return (
-      <Tooltip>
+      <Tooltidiv>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent
           side="right"
@@ -586,7 +586,7 @@ const SidebarMenuButton = React.forwardRef<
           hidden={state !== "collapsed" || isMobile}
           {...tooltip}
         />
-      </Tooltip>
+      </Tooltidiv>
     )
   }
 )

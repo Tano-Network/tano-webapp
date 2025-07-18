@@ -14,7 +14,7 @@ function MenubarMenu({
 
 function MenubarGroup({
   ...props
-}: React.ComponentProps<typeof MenubarPrimitive.Group>) {
+}: React.ComponentProps<typeof MenubarPrimitive.Groudiv>) {
   return <MenubarPrimitive.Group {...props} />
 }
 
@@ -26,7 +26,7 @@ function MenubarPortal({
 
 function MenubarRadioGroup({
   ...props
-}: React.ComponentProps<typeof MenubarPrimitive.RadioGroup>) {
+}: React.ComponentProps<typeof MenubarPrimitive.RadioGroudiv>) {
   return <MenubarPrimitive.RadioGroup {...props} />
 }
 

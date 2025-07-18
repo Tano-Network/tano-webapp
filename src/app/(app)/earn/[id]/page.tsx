@@ -464,9 +464,9 @@ function handleError(type: string, err: any) {
     return (
       <div className="container mx-auto p-4 max-w-2xl flex flex-col items-center justify-center min-h-[60vh]">
         <LoadingSpinner size="lg" />
-        <p className="mt-4 text-muted-foreground">
+        <div className="mt-4 text-muted-foreground">
           {pageError || (poolId ? "Loading earn pool data..." : "Invalid pool ID...")}
-        </p>
+        </div>
         {pageError && (
           <Button asChild variant="outline" className="mt-6 bg-transparent">
             <Link href="/earn">
@@ -761,24 +761,24 @@ function handleError(type: string, err: any) {
               ) : (
                 <>
                   <div>
-                    <p className="text-sm text-muted-foreground">Your Staked Balance</p>
-                    <p className="text-lg font-semibold">
+                    <div className="text-sm text-muted-foreground">Your Staked Balance</div>
+                    <div className="text-lg font-semibold">
                       {formattedStakedBalance} {pool.asset}
-                    </p>
+                    </div>
                   </div>
 
                   <div>
-                    <p className="text-sm text-muted-foreground">Your Wallet Balance</p>
-                    <p className="text-lg font-semibold">
+                    <div className="text-sm text-muted-foreground">Your Wallet Balance</div>
+                    <div className="text-lg font-semibold">
                       {formattedTokenBalance} {pool.asset}
-                    </p>
+                    </div>
                   </div>
 
                   <div>
-                    <p className="text-sm text-muted-foreground">Approved Allowance</p>
-                    <p className="text-lg font-semibold">
+                    <div className="text-sm text-muted-foreground">Approved Allowance</div>
+                    <div className="text-lg font-semibold">
                       {formattedTokenAllowance} {pool.asset}
-                    </p>
+                    </div>
                   </div>
 
                   <div>
@@ -787,9 +787,9 @@ function handleError(type: string, err: any) {
                       <span className="font-medium">{usagePercentage.toFixed(1)}%</span>
                     </div>
                     <Progress value={usagePercentage} className="h-2" />
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       {formattedStakedBalance} / {formattedTotalStaked} staked
-                    </p>
+                    </div>
                   </div>
                 </>
               )}
@@ -837,7 +837,7 @@ function handleError(type: string, err: any) {
                 ) : (
                   <CheckCircle2 size={40} className="text-green-500" />
                 )}
-                <p className="text-center">{modalContent.description}</p>
+                <div className="text-center">{modalContent.description}</div>
                 {modalContent.isSuccess && modalContent.txHash && (
                   <Button asChild variant="outline" size="sm">
                     <a

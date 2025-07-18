@@ -7,8 +7,22 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-
-const StatCard = ({ icon, label, value, subValue, description, delay = 0 }) => (
+interface StatCardProps {
+  icon: React.ReactNode
+  label: string
+  value: string | number
+  subValue?: string | number
+  description?: string
+  delay?: number
+}
+interface FeatureCardProps {
+  icon: React.ReactNode
+  title: string
+  description: string
+  badge?: string
+  delay?: number
+}
+const StatCard = ({ icon, label, value, subValue, description, delay = 0 }  : StatCardProps) => (
   <Card
     className="group relative overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
     style={{
@@ -28,20 +42,20 @@ const StatCard = ({ icon, label, value, subValue, description, delay = 0 }) => (
         {value}
       </CardTitle>
       {subValue && (
-        <p className="text-sm text-green-500 dark:text-green-400 font-medium group-hover:text-green-600 transition-colors">
+        <div className="text-sm text-green-500 dark:text-green-400 font-medium group-hover:text-green-600 transition-colors">
           {subValue}
-        </p>
+        </div>
       )}
       {description && (
-        <p className="text-xs text-muted-foreground mt-2 group-hover:text-muted-foreground/70 transition-colors">
+        <div className="text-xs text-muted-foreground mt-2 group-hover:text-muted-foreground/70 transition-colors">
           {description}
-        </p>
+        </div>
       )}
     </CardHeader>
   </Card>
 )
 
-const FeatureCard = ({ icon, title, description, badge, delay = 0 }) => (
+const FeatureCard = ({ icon, title, description, badge, delay = 0 } : FeatureCardProps) => (
   <Card
     className="group hover:shadow-xl transition-all duration-500 border-border/50 hover:border-primary/20 hover:-translate-y-1"
     style={{
@@ -101,7 +115,7 @@ export default function HomePage() {
             Tano Finance
           </h1>
 
-          <p
+          <div
             className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed"
             style={{
               animation: "slideInUp 0.8s ease-out 0.2s forwards",
@@ -111,7 +125,7 @@ export default function HomePage() {
           >
             Unlock the power of your cryptocurrency. Earn sustainable yield and participate in the future of
             decentralized finance.
-          </p>
+          </div>
 
           <div
             className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
@@ -150,9 +164,9 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Platform Statistics</h2>
-            <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
+            <div className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
               Real-time metrics from our growing ecosystem
-            </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -197,9 +211,9 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Why Choose Tano Finance?</h2>
-            <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
+            <div className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
               Built for the future of DeFi with security, transparency, and user experience at the core
-            </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -252,9 +266,9 @@ export default function HomePage() {
 
         <div className="max-w-4xl mx-auto text-center relative">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">Ready to Start Earning?</h2>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <div className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Join thousands of users already earning yield on their crypto assets with Tano Finance.
-          </p>
+          </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="text-lg px-8 py-6 hover:scale-105 transition-all duration-300 group">
               <Link href="/vault" className="flex items-center gap-2">
