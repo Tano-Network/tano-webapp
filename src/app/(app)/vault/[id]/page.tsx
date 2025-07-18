@@ -463,38 +463,40 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
 
       <AlertDialog open={showModal} onOpenChange={setShowModal}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{modalContent.title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              <div className="flex flex-col items-center mt-4 gap-3">
-                {!modalContent.isSuccess ? (
-                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                ) : (
-                  <CheckCircle2 size={40} className="text-green-500" />
-                )}
-                <div className="text-center">{modalContent.description}</div>
-                {modalContent.isSuccess && modalContent.txHash && (
-                  <Button asChild variant="outline" size="sm">
-                    <a
-                      href={`${explorerUrl}/tx/${modalContent.txHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2"
-                    >
-                      View on Etherscan <ExternalLink size={14} />
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {modalContent.isSuccess && (
-            <AlertDialogFooter>
-              <AlertDialogAction onClick={() => setShowModal(false)}>Close</AlertDialogAction>
-            </AlertDialogFooter>
+    <AlertDialogHeader>
+      <AlertDialogTitle>{modalContent.title}</AlertDialogTitle>
+      <AlertDialogDescription>
+        <span className="flex flex-col items-center mt-4 gap-3 max-w-full">
+          {!modalContent.isSuccess ? (
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          ) : (
+            <CheckCircle2 size={40} className="text-green-500" />
           )}
-        </AlertDialogContent>
-      </AlertDialog>
+          <span className="text-center break-words overflow-hidden">
+            {modalContent.description}
+          </span>
+          {modalContent.isSuccess && modalContent.txHash && (
+            <Button asChild variant="outline" size="sm">
+              <a
+                href={`${explorerUrl}/tx/${modalContent.txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2"
+              >
+                View on Etherscan <ExternalLink size={14} />
+              </a>
+            </Button>
+          )}
+        </span>
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    {modalContent.isSuccess && (
+      <AlertDialogFooter>
+        <AlertDialogAction onClick={() => setShowModal(false)}>Close</AlertDialogAction>
+      </AlertDialogFooter>
+    )}
+  </AlertDialogContent>
+</AlertDialog>
     </div>
   )
 }
