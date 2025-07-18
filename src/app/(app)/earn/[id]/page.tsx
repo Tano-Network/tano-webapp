@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import { Contract, BrowserProvider, parseUnits, formatUnits } from "ethers"
 import Link from "next/link"
 import { CheckCircle2, ExternalLink, ArrowLeft, Loader2, AlertTriangle, Info } from "lucide-react"
@@ -80,9 +80,10 @@ const getEarnPoolData = (id: string) => {
   )
 }
 
-export default function EarnPoolPage({ params }: { params: EarnParams }) {
+export default function EarnPoolPage({ params }: { params: Promise<{ id: string }> }) {
   // Safely access params.id
-  const poolId = typeof params.id === "string" ? params.id : ""
+  const { id } = use(params)
+  const poolId = typeof id === "string" ? id : ""
   const pool = getEarnPoolData(poolId)
 
   const { address, isConnected } = useAccount()
@@ -96,10 +97,10 @@ export default function EarnPoolPage({ params }: { params: EarnParams }) {
   const [stakingContract, setStakingContract] = useState<Contract | null>(null)
   const [stakingTokenContract, setStakingTokenContract] = useState<Contract | null>(null)
 
-  const [stakedBalance, setStakedBalance] = useState<bigint>(0n)
-  const [totalStaked, setTotalStaked] = useState<bigint>(0n)
-  const [tokenBalance, setTokenBalance] = useState<bigint>(0n)
-  const [tokenAllowance, setTokenAllowance] = useState<bigint>(0n)
+  const [stakedBalance, setStakedBalance] = useState<number>(0)
+  const [totalStaked, setTotalStaked] = useState<number>(0)
+  const [tokenBalance, setTokenBalance] = useState<number>(0)
+  const [tokenAllowance, setTokenAllowance] = useState<number>(0)
 
   const [isProcessing, setIsProcessing] = useState(false)
   const [showModal, setShowModal] = useState(false)

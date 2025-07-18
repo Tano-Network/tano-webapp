@@ -208,7 +208,7 @@ function WalletGuard({ children }: { children: React.ReactNode }) {
 
   if (isConnecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="relative min-h-full">
         <div className="text-center space-y-4">
           <LoadingSpinner size="lg" />
           <p className="text-muted-foreground">Connecting wallet...</p>

@@ -13,7 +13,7 @@ import {LoadingSpinner} from "@/components/LoadingSpinner" // Corrected import
 import { cn } from "@/lib/utils"
 import { CONTRACT_ADDRESSES, SUPPORTED_CHAINS } from "@/lib/constants"
 import earnStakingAbi from "@/abi/earnStaking.json"
-import { formatUnits } from "ethers"
+import { formatUnits, ZeroAddress } from "ethers"
 import { getCoinPrices } from "@/app/actions/get-prices"
 
 // Define a type for the earn pool data including fetched values
@@ -28,7 +28,7 @@ interface EarnPool {
   apy: string // Placeholder for now
   myDeposit: string // Will be fetched
   color: string
-  status: "active" | "coming-soon"
+  status: string // "active" | "coming-soon"
   description: string
   coinGeckoId: string // Added for price fetching
 }
@@ -46,7 +46,7 @@ const initialEarnPools: EarnPool[] = [
     apy: "15.2%",
     myDeposit: "0.00",
     color: "from-yellow-500 to-orange-500",
-    status: "active",
+    status: (CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_STAKING_POOL !== ZeroAddress) ? "active" : "coming-soon",
     description: "Stake your tDOGE to earn rewards",
     coinGeckoId: "dogecoin",
   },
@@ -61,7 +61,7 @@ const initialEarnPools: EarnPool[] = [
     apy: "0.0%",
     myDeposit: "0.00",
     color: "from-gray-400 to-gray-600",
-    status: "coming-soon",
+    status: (CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_STAKING_POOL !== ZeroAddress) ? "active" : "coming-soon",
     description: "Stake your tLTC to earn rewards",
     coinGeckoId: "litecoin",
   },
@@ -76,13 +76,22 @@ const initialEarnPools: EarnPool[] = [
     apy: "0.0%",
     myDeposit: "0.00",
     color: "from-green-500 to-emerald-600",
-    status: "coming-soon",
+    status: (CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_STAKING_POOL !== ZeroAddress) ? "active" : "coming-soon",
     description: "Stake your tBCH to earn rewards",
     coinGeckoId: "bitcoin-cash",
   },
 ]
 
-const StatCard = ({ icon, label, value, description, isLoading = false, delay = 0 }) => (
+interface StatCardProps {
+  icon: React.ReactNode
+  label: string
+  value: string | null // Allow null for loading state
+  description?: string
+  isLoading?: boolean
+  delay?: number
+}
+
+const StatCard = ({ icon, label, value, description, isLoading = false, delay = 0 }: StatCardProps) => (
   <Card
     className="relative overflow-hidden group hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
     style={{ animationDelay: `${delay}ms` }}
@@ -117,8 +126,13 @@ const StatCard = ({ icon, label, value, description, isLoading = false, delay = 
     </CardContent>
   </Card>
 )
-
-const EarnPoolCard = ({ pool, onSelect, isLoading, index }) => {
+interface EarnPoolCardProps {
+  pool: any
+  onSelect: (pool: any) => void
+  isLoading: boolean
+  index: number
+}
+const EarnPoolCard = ({ pool, onSelect, isLoading, index }: EarnPoolCardProps) => {
   const [isHovered, setIsHovered] = useState(false)
 
   const getStatusBadge = () => {
@@ -289,13 +303,13 @@ export default function EarnDashboardPage() {
 
         const updatedPools = await Promise.all(
           initialEarnPools.map(async (pool) => {
-            let totalStaked = 0n
-            let myDeposit = 0n
+            let totalStaked = 0
+            let myDeposit = 0
 
             // Only fetch if the pool is active and has a valid contract address
             if (
               pool.status === "active" &&
-              pool.contractAddress !== "0x0000000000000000000000000000000000000000" &&
+              pool.contractAddress !== ZeroAddress &&
               publicClient
             ) {
               try {
@@ -305,7 +319,7 @@ export default function EarnDashboardPage() {
                   abi: earnStakingAbi,
                   functionName: "totalStaked",
                 })
-                totalStaked = totalStakedResult as bigint
+                totalStaked = totalStakedResult as number
 
                 // Fetch user's staked balance if connected
                 if (isConnected && address) {
@@ -315,13 +329,13 @@ export default function EarnDashboardPage() {
                     functionName: "getStakedBalance",
                     args: [address],
                   })
-                  myDeposit = myDepositResult as bigint
+                  myDeposit = myDepositResult as number
                 }
               } catch (contractError) {
                 console.error(`Error fetching data for ${pool.asset} pool:`, contractError)
                 // Fallback to default 0 values if contract call fails
-                totalStaked = 0n
-                myDeposit = 0n
+                totalStaked = 0
+                myDeposit = 0
               }
             }
 

@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { use, useEffect, useState } from "react"
 import { Contract, BrowserProvider, parseUnits, formatUnits } from "ethers"
 import Link from "next/link"
 import { CheckCircle2, ExternalLink, ArrowLeft, Loader2, AlertTriangle } from "lucide-react"
@@ -79,8 +79,8 @@ const getVaultData = (id: string) => {
   )
 }
 
-export default function VaultDepositPage({ params }: { params: VaultParams }) {
-  const { id } = params
+export default function VaultDepositPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const vault = getVaultData(id)
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
@@ -91,10 +91,10 @@ export default function VaultDepositPage({ params }: { params: VaultParams }) {
   const [assetContract, setAssetContract] = useState<Contract | null>(null)
 
   const [isWhitelisted, setIsWhitelisted] = useState(false)
-  const [mintableAmount, setMintableAmount] = useState<bigint>(0n)
-  const [mintedAmount, setMintedAmount] = useState<bigint>(0n)
-  const [allowance, setAllowance] = useState<bigint>(0n)
-  const [currentAssetBalance, setCurrentAssetBalance] = useState<bigint>(0n)
+  const [mintableAmount, setMintableAmount] = useState<number>(0)
+  const [mintedAmount, setMintedAmount] = useState<number>(0)
+  const [allowance, setAllowance] = useState<number>(0)
+  const [currentAssetBalance, setCurrentAssetBalance] = useState<number>(0)
 
   const [isProcessing, setIsProcessing] = useState(false)
   const [showModal, setShowModal] = useState(false)
@@ -288,7 +288,7 @@ export default function VaultDepositPage({ params }: { params: VaultParams }) {
 
   const maxMintable = Number(formatUnits(mintableAmount, 18))
   const usagePercentage =
-    allowance > 0n ? (Number(formatUnits(mintedAmount, 18)) / Number(formatUnits(allowance, 18))) * 100 : 0
+    allowance > 0 ? (Number(formatUnits(mintedAmount, 18)) / Number(formatUnits(allowance, 18))) * 100 : 0
 
   if (!isConnected) {
     return (
@@ -539,7 +539,7 @@ export default function VaultDepositPage({ params }: { params: VaultParams }) {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status</span>
-                <Badge variant="default" size="sm">
+                <Badge variant="default" >
                   {isWhitelisted ? "Active" : "Restricted"}
                 </Badge>
               </div>

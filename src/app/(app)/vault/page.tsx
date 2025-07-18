@@ -4,8 +4,9 @@ import { useEffect, useState } from "react"
 import { Lock, Coins, TrendingUp, Shield, AlertCircle, CheckCircle2, Sparkles } from "lucide-react"
 import { RainbowConnectButton } from "@/components/RainbowConnectButton"
 import { useAccount, useChainId } from "wagmi"
-import { BrowserProvider, ethers } from "ethers"
+import { BrowserProvider, ethers, ZeroAddress } from "ethers"
 import assetManagementAbi from "@/abi/assetManagement.json"
+import assetAbi from "@/abi/asset.json"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,12 +24,15 @@ const vaults = [
     icon: "Ð",
     totalLocked: "150.5M tDOGE",
     apy: "12.8%",
-    myDeposit: "0.00",
+    minted: "0.00",
     whitelistContract: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_ASSET_MANAGEMENT,
     whitelistAbi: assetManagementAbi,
+    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_TOKEN,
+    tokenAbi: assetAbi,
     color: "from-yellow-500 to-orange-500",
-    status: "active",
+    status: (CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_ASSET_MANAGEMENT !== ZeroAddress) ? "active" : "coming-soon",
     description: "The original meme coin, now earning yield",
+    totalMinted: '0'
   },
   {
     id: "litecoin",
@@ -36,12 +40,18 @@ const vaults = [
     icon: "Ł",
     totalLocked: "250.2 tLTC",
     apy: "8.2%",
-    myDeposit: "0.00",
+    minted: "0.00",
     whitelistContract: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT,
     whitelistAbi: assetManagementAbi,
     color: "from-gray-400 to-gray-600",
-    status: "coming-soon",
+    status: (CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT !== ZeroAddress) ? "active" : "coming-soon",
     description: "Digital silver for the digital age",
+    totalMinted: '0',
+    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN,
+    tokenAbi: assetAbi,
+  
+
+
   },
   {
     id: "bitcoin_cash",
@@ -49,16 +59,26 @@ const vaults = [
     icon: "₿",
     totalLocked: "5,120 tBCH",
     apy: "9.5%",
-    myDeposit: "0.00",
+    minted: "0.00",
     whitelistContract: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT,
     whitelistAbi: assetManagementAbi,
     color: "from-green-500 to-emerald-600",
-    status: "coming-soon",
+    status: (CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT !== ZeroAddress) ? "active" : "coming-soon",
     description: "Peer-to-peer electronic cash system",
+    totalMinted: '0',
+    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
+    tokenAbi: assetAbi,
   },
 ]
-
-const StatCard = ({ icon, label, value, description, isLoading = false, delay = 0 }) => (
+interface StatCardProps {
+  icon: React.ReactNode
+  label: string
+  value: string | null // Allow null for loading state
+  description?: string
+  isLoading?: boolean
+  delay?: number
+}
+const StatCard = ({ icon, label, value, description, isLoading = false, delay = 0 }: StatCardProps) => (
   <Card
     className="relative overflow-hidden group hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
     style={{ animationDelay: `${delay}ms` }}
@@ -93,8 +113,26 @@ const StatCard = ({ icon, label, value, description, isLoading = false, delay = 
     </CardContent>
   </Card>
 )
-
-const VaultCard = ({ vault, isWhitelisted, onSelect, isLoading, index }) => {
+interface VaultCardProps {
+  vault: {
+    id: string
+    asset: string
+    icon: string
+    totalLocked: string
+    apy: string
+    minted: string
+    whitelistContract: string
+    whitelistAbi: any
+    color: string
+    status: string
+    description: string
+  }
+  isWhitelisted: boolean | null
+  onSelect: (vault: any) => void
+  isLoading: boolean
+  index: number
+}
+const VaultCard = ({ vault, isWhitelisted, onSelect, isLoading, index }: VaultCardProps) => {
   const [isHovered, setIsHovered] = useState(false)
 
   const getStatusBadge = () => {
@@ -190,9 +228,9 @@ const VaultCard = ({ vault, isWhitelisted, onSelect, isLoading, index }) => {
         </div>
 
         <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">My Deposit</p>
+          <p className="text-sm text-muted-foreground">My Minted</p>
           <p className="font-semibold">
-            {vault.myDeposit} {vault.asset}
+            {vault.minted} {vault.asset}
           </p>
         </div>
 
@@ -255,25 +293,31 @@ export default function VaultsPage() {
         const provider = new BrowserProvider((window as any).ethereum)
         const statusUpdates = await Promise.all(
           vaults.map(async (vault) => {
-            const { whitelistContract, whitelistAbi, id } = vault
+            const { whitelistContract, whitelistAbi, id, tokenAddress, tokenAbi } = vault
 
-            if (!whitelistContract || whitelistContract === "0x0000000000000000000000000000000000000000") {
-              return { id, whitelisted: null }
+            if (!whitelistContract || whitelistContract === ZeroAddress) {
+              return { id, whitelisted: null , supply: null, mints: null }
+            }
+            if (!tokenAddress || tokenAddress === ZeroAddress) {
+              return { id, whitelisted: null , supply: null, mints: null }
             }
 
             try {
               const code = await provider.getCode(whitelistContract)
               if (!code || code === "0x") {
-                return { id, whitelisted: null }
+                return { id, whitelisted: null , supply: null , mints: null}
               }
 
               const contract = new ethers.Contract(whitelistContract, whitelistAbi, provider)
               if (!contract.interface.getFunction("isWhitelisted")) {
-                return { id, whitelisted: null }
+                return { id, whitelisted: null , supply: null, mints: null }
               }
 
               const whitelisted = await contract.isWhitelisted(address)
-              return { id, whitelisted }
+              const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, provider)
+              const supply = await tokenContract.totalSupply();
+              const mints = await contract.getMintedAmount(address);
+              return { id, whitelisted, supply , mints }
             } catch (err) {
               console.error(`Error checking whitelist for vault ${id}:`, err)
               return { id, whitelisted: false }
@@ -282,8 +326,14 @@ export default function VaultsPage() {
         )
 
         const newStatus: Record<string, boolean | null> = {}
-        for (const { id, whitelisted } of statusUpdates) {
+        for (const { id, whitelisted , supply,mints } of statusUpdates) {
           newStatus[id] = whitelisted
+          if (supply) {
+            vaults.find(v => v.id === id)!.totalMinted = (`${ethers.formatUnits(supply, 18)} ${vaults.find(v => v.id === id)!.asset}`)
+          }
+          if (mints){
+            vaults.find(v => v.id === id)!.minted = (`${ethers.formatUnits(mints, 18)} ${vaults.find(v => v.id === id)!.asset}`);
+          }
         }
         setWhitelistStatus(newStatus)
       } catch (error) {
@@ -370,15 +420,22 @@ export default function VaultsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <StatCard
           icon={<Lock size={20} className="text-primary" />}
-          label="Total DOGE Locked"
-          value="150.5M DOGE"
+          label="Total Locked Assets"
+          value="150.5M $"
           description="Across all vaults"
           delay={0}
         />
         <StatCard
           icon={<Coins size={20} className="text-primary" />}
           label="Total t-DOGE Minted"
-          value="148.2M t-DOGE"
+          value={vaults[0].totalMinted}
+          description="Available for trading"
+          delay={100}
+        />
+        <StatCard
+          icon={<Coins size={20} className="text-primary" />}
+          label="Total t-LTC Minted"
+          value={vaults[1].totalMinted}
           description="Available for trading"
           delay={100}
         />
@@ -392,7 +449,7 @@ export default function VaultsPage() {
         <StatCard
           icon={<Shield size={20} className="text-primary" />}
           label="Active Vaults"
-          value="1"
+          value= {(vaults.filter(v => v.status === "active").length).toString()}
           description="On Sepolia testnet"
           delay={300}
         />
