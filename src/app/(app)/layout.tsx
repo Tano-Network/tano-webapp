@@ -262,7 +262,7 @@ export default function AppLayout({
       </Suspense>
       <main className="flex-1 relative">
         <WalletGuard>
-          <divageTransition>{children}</PageTransition>
+          <PageTransition>{children}</PageTransition>
         </WalletGuard>
       </main>
     </div>
