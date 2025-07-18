@@ -1,8 +1,12 @@
 "use client"
-import { use, useEffect, useState } from "react"
-import { Contract, BrowserProvider, parseUnits, formatUnits } from "ethers"
+
+import { useEffect, useState ,use} from "react"
+import { parseUnits, formatUnits } from "viem"
+import { useAccount, useChainId, useWriteContract } from "wagmi"
+import { readContract, waitForTransactionReceipt } from "wagmi/actions"
 import Link from "next/link"
-import { CheckCircle2, ExternalLink, ArrowLeft, Loader2, AlertTriangle } from "lucide-react"
+import { CheckCircle2, ExternalLink, ArrowLeft, Loader2 } from "lucide-react"
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,28 +24,24 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { useToast } from "@/hooks/use-toast"
+
 import assetManagementAbi from "@/abi/assetManagement.json"
 import assetAbi from "@/abi/asset.json"
+import { config } from "@/lib/wagmiConfig"
 import { cn } from "@/lib/utils"
-import { useAccount, useChainId } from "wagmi"
 import { CONTRACT_ADDRESSES, EXPLORER_URLS, SUPPORTED_CHAINS } from "@/lib/constants"
 
-interface VaultParams {
-  id: string
-}
+type VaultKey = 'doge' | 'litecoin' | 'bitcoin_cash'
 
 const getVaultData = (id: string) => {
-  const vaults: Record<
-    string,
-    {
-      asset: string
-      icon: string
-      contractAddress: string
-      assetAddress: string
-      color: string
-      description: string
-    }
-  > = {
+  const vaults: Record<VaultKey, {
+    asset: string
+    icon: string
+    contractAddress: string
+    assetAddress: string
+    color: string
+    description: string
+  }> = {
     doge: {
       asset: "tDOGE",
       icon: "Ð",
@@ -67,314 +67,219 @@ const getVaultData = (id: string) => {
       description: "Tokenized Bitcoin Cash for DeFi applications",
     },
   }
-  return (
-    vaults[id] || {
-      asset: "Unknown",
-      icon: "?",
-      contractAddress: "0x0000000000000000000000000000000000000000",
-      assetAddress: "0x0000000000000000000000000000000000000000",
-      color: "from-gray-400 to-gray-600",
-      description: "Unknown asset",
-    }
-  )
+
+  if (id in vaults) {
+    return vaults[id as VaultKey]
+  }
+
+  // fallback if id is not valid
+  return {
+    asset: "Unknown",
+    icon: "?",
+    contractAddress: "0x0000000000000000000000000000000000000000",
+    assetAddress: "0x0000000000000000000000000000000000000000",
+    color: "from-gray-400 to-gray-600",
+    description: "Unknown asset",
+  }
 }
 
+
 export default function VaultDepositPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+  const {id}  = use(params)
   const vault = getVaultData(id)
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const { toast } = useToast()
+  const { writeContractAsync } = useWriteContract()
 
   const [amount, setAmount] = useState("")
-  const [contract, setContract] = useState<Contract | null>(null)
-  const [assetContract, setAssetContract] = useState<Contract | null>(null)
-
   const [isWhitelisted, setIsWhitelisted] = useState(false)
-  const [mintableAmount, setMintableAmount] = useState<number>(0)
-  const [mintedAmount, setMintedAmount] = useState<number>(0)
-  const [allowance, setAllowance] = useState<number>(0)
-  const [currentAssetBalance, setCurrentAssetBalance] = useState<number>(0)
-
+  const [mintableAmount, setMintableAmount] = useState<bigint>(BigInt(0))
+  const [mintedAmount, setMintedAmount] = useState<bigint>(BigInt(0))
+  const [allowance, setAllowance] = useState<bigint>(BigInt(0))
+  const [currentAssetBalance, setCurrentAssetBalance] = useState<bigint>(BigInt(0))
   const [isProcessing, setIsProcessing] = useState(false)
   const [showModal, setShowModal] = useState(false)
-  const [modalContent, setModalContent] = useState<{
-    title: string
-    description: string
-    isSuccess: boolean
-    txHash?: string
-  }>({ title: "", description: "", isSuccess: false })
-
+  const [modalContent, setModalContent] = useState({
+    title: "",
+    description: "",
+    isSuccess: false,
+    txHash: undefined as string | undefined,
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Check if we're on Sepolia testnet
   const isCorrectNetwork = chainId === SUPPORTED_CHAINS.SEPOLIA
-  const explorerUrl = EXPLORER_URLS[chainId as keyof typeof EXPLORER_URLS] || EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA]
+  const explorerUrl =
+    EXPLORER_URLS[chainId as keyof typeof EXPLORER_URLS] || EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA]
+
+  const refreshState = async () => {
+    if (!address) return
+    try {
+      const [mintable, minted, balance] = await Promise.all([
+        readContract(config, {
+          address: vault.contractAddress as `0x${string}`,
+          abi: assetManagementAbi,
+          functionName: "getMintableAmount",
+          args: [address],
+        }),
+        readContract(config, {
+          address: vault.contractAddress as `0x${string}`,
+          abi: assetManagementAbi,
+          functionName: "getMintedAmount",
+          args: [address],
+        }),
+        readContract(config, {
+          address: vault.assetAddress as `0x${string}`,
+          abi: assetAbi,
+          functionName: "balanceOf",
+          args: [address],
+        }),
+      ])
+      setMintableAmount(mintable as bigint)
+      setMintedAmount(minted as bigint)
+      setCurrentAssetBalance(balance as bigint)
+    } catch (err) {
+      console.error("refreshState error:", err)
+    }
+  }
 
   useEffect(() => {
-    const connect = async () => {
+    const fetchInitial = async () => {
+      if (!isConnected || !address || !isCorrectNetwork) return
+
       try {
-        if (!window.ethereum) {
-          setError("Please install MetaMask or another Web3 wallet")
-          return
-        }
-
-        if (!isConnected || !address) {
-          setError("Please connect your wallet")
-          return
-        }
-
-        if (!isCorrectNetwork) {
-          setError("Please switch to Sepolia testnet")
-          return
-        }
-
-        const provider = new BrowserProvider(window.ethereum)
-        const signer = await provider.getSigner()
-
-        const contractInstance = new Contract(vault.contractAddress, assetManagementAbi, signer)
-        const assetInstance = new Contract(vault.assetAddress, assetAbi, signer)
-        setContract(contractInstance)
-        setAssetContract(assetInstance)
+        const [whitelisted, totalSupply] = await Promise.all([
+          readContract(config, {
+            address: vault.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "isWhitelisted",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vault.assetAddress as `0x${string}`,
+            abi: assetAbi,
+            functionName: "totalSupply",
+          }),
+        ])
+        setIsWhitelisted(whitelisted as boolean)
         setError(null)
       } catch (err) {
-        console.error("Connection error:", err)
-        setError("Failed to connect to contracts")
+        console.error(err)
+        setError("Contract read failed")
       }
     }
-    connect()
-  }, [vault.contractAddress, vault.assetAddress, isConnected, address, isCorrectNetwork])
+
+    fetchInitial()
+  }, [isConnected, address, isCorrectNetwork, vault])
 
   useEffect(() => {
-    const fetchState = async () => {
-      if (!contract || !assetContract || !address || !isCorrectNetwork) return
-
+    const fetchData = async () => {
+      if (!address || !isCorrectNetwork) return
       setIsLoading(true)
       try {
         const [whitelisted, mintable, allowanceAmt, mintedAmt, curBal] = await Promise.all([
-          contract.isWhitelisted(address),
-          contract.getMintableAmount(address),
-          contract.getAllowance(address),
-          contract.getMintedAmount(address),
-          assetContract.balanceOf(address),
+          readContract(config, {
+            address: vault.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "isWhitelisted",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vault.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "getMintableAmount",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vault.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "getAllowance",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vault.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "getMintedAmount",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vault.assetAddress as `0x${string}`,
+            abi: assetAbi,
+            functionName: "balanceOf",
+            args: [address],
+          }),
         ])
-
-        setIsWhitelisted(whitelisted)
-        setMintableAmount(mintable)
-        setAllowance(allowanceAmt)
-        setMintedAmount(mintedAmt)
-        setCurrentAssetBalance(curBal)
-        setError(null)
+        setIsWhitelisted(whitelisted as boolean)
+        setMintableAmount(mintable as bigint)
+        setAllowance(allowanceAmt as bigint)
+        setMintedAmount(mintedAmt as bigint)
+        setCurrentAssetBalance(curBal as bigint)
       } catch (err) {
-        console.error("Fetch error:", err)
-        setError("Failed to fetch vault data. Please ensure you're on Sepolia testnet.")
+        console.error(err)
+        setError("Could not fetch vault data")
       } finally {
         setIsLoading(false)
       }
     }
-    fetchState()
-  }, [contract, assetContract, address, isCorrectNetwork])
+
+    fetchData()
+  }, [vault, address, isCorrectNetwork])
 
   const handleMint = async () => {
-    if (!contract || !amount || Number.parseFloat(amount) <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount to mint",
-        variant: "destructive",
-      })
+    if (!amount || parseFloat(amount) <= 0) {
+      toast({ title: "Invalid", description: "Enter a valid amount", variant: "destructive" })
       return
     }
 
     if (!isCorrectNetwork) {
-      toast({
-        title: "Wrong Network",
-        description: "Please switch to Sepolia testnet",
-        variant: "destructive",
-      })
+      toast({ title: "Wrong Network", description: "Switch to Sepolia", variant: "destructive" })
       return
     }
 
     setIsProcessing(true)
     setShowModal(true)
-    setModalContent({
-      title: "Preparing Transaction",
-      description: "Please confirm the transaction in your wallet...",
-      isSuccess: false,
-    })
+    setModalContent({ title: "Preparing Transaction", description: "Please confirm in your wallet...", isSuccess: false , txHash: undefined })
 
     try {
       const amountBigInt = parseUnits(amount, 18)
-
-      // Check if amount exceeds mintable amount
       if (amountBigInt > mintableAmount) {
-        throw new Error(`Amount exceeds your mintable limit of ${formatUnits(mintableAmount, 18)} ${vault.asset}`)
+        throw new Error(`Amount exceeds mintable limit of ${formatUnits(mintableAmount, 18)} ${vault.asset}`)
       }
 
-      setModalContent({
-        title: "Transaction Pending",
-        description: "Confirm the transaction in your wallet...",
-        isSuccess: false,
+      const hash = await writeContractAsync({
+        address: vault.contractAddress as `0x${string}`,
+        abi: assetManagementAbi,
+        functionName: "mint",
+        args: [amountBigInt],
       })
 
-      const tx = await contract.mint(amountBigInt)
+      setModalContent({ title: "Transaction Submitted", description: "Waiting for confirmation...", isSuccess: false, txHash: hash })
 
-      setModalContent({
-        title: "Transaction Submitted",
-        description: "Waiting for blockchain confirmation...",
-        isSuccess: false,
-      })
+      await waitForTransactionReceipt(config, { hash })
 
-      const receipt = await tx.wait()
+      toast({ title: "Success", description: `Minted ${amount} ${vault.asset}` })
 
-      if (receipt.status === 1) {
-        setModalContent({
-          title: "Mint Successful!",
-          description: `Successfully minted ${amount} ${vault.asset}`,
-          isSuccess: true,
-          txHash: tx.hash,
-        })
-
-        toast({
-          title: "Success!",
-          description: `Minted ${amount} ${vault.asset}`,
-        })
-
-        setAmount("")
-
-        // Refresh data
-        const [mintable, mintedAmt, curBal] = await Promise.all([
-          contract.getMintableAmount(address!),
-          contract.getMintedAmount(address!),
-          assetContract!.balanceOf(address!),
-        ])
-        setMintableAmount(mintable)
-        setMintedAmount(mintedAmt)
-        setCurrentAssetBalance(curBal)
-      } else {
-        throw new Error("Transaction failed")
-      }
+      setModalContent({ title: "Mint Successful!", description: `Successfully minted ${amount} ${vault.asset}`, isSuccess: true, txHash: hash })
+      setAmount("")
+      await refreshState()
     } catch (err: any) {
       console.error("Mint error:", err)
-
-      let errorMessage = "Transaction failed"
-      if (err?.reason) {
-        errorMessage = err.reason
-      } else if (err?.message) {
-        if (err.message.includes("user rejected")) {
-          errorMessage = "Transaction was cancelled"
-        } else if (err.message.includes("insufficient funds")) {
-          errorMessage = "Insufficient funds for gas"
-        } else {
-          errorMessage = err.message
-        }
-      }
-
-      setModalContent({
-        title: "Transaction Failed",
-        description: errorMessage,
-        isSuccess: false,
-      })
-
-      toast({
-        title: "Transaction Failed",
-        description: errorMessage,
-        variant: "destructive",
-      })
+      const message =
+        err?.message?.includes("user rejected")
+          ? "Transaction cancelled"
+          : err?.message || "Mint failed"
+      setModalContent({ title: "Failed", description: message, isSuccess: false , txHash: undefined })
+      toast({ title: "Mint Failed", description: message, variant: "destructive" })
     } finally {
       setIsProcessing(false)
     }
   }
 
-  const maxMintable = Number(formatUnits(mintableAmount, 18))
   const usagePercentage =
-    allowance > 0 ? (Number(formatUnits(mintedAmount, 18)) / Number(formatUnits(allowance, 18))) * 100 : 0
-
-  if (!isConnected) {
-    return (
-      <div className="container mx-auto p-4 max-w-2xl">
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>Please connect your wallet to access this vault</AlertDescription>
-        </Alert>
-        <Button asChild variant="outline">
-          <Link href="/vault">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Vaults
-          </Link>
-        </Button>
-      </div>
-    )
-  }
-
-  if (!isCorrectNetwork) {
-    return (
-      <div className="container mx-auto p-4 max-w-2xl">
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Please switch to Sepolia testnet to use this vault. Current network: {chainId}
-          </AlertDescription>
-        </Alert>
-        <Button asChild variant="outline">
-          <Link href="/vault">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Vaults
-          </Link>
-        </Button>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto p-4 max-w-2xl">
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-        <Button asChild variant="outline">
-          <Link href="/vault">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Vaults
-          </Link>
-        </Button>
-      </div>
-    )
-  }
-
-  if (!isWhitelisted && !isLoading) {
-    return (
-      <div className="container mx-auto p-4 max-w-2xl">
-        <Button asChild variant="outline" className="mb-6 bg-transparent">
-          <Link href="/vault">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Vaults
-          </Link>
-        </Button>
-
-        <Card className="text-center">
-          <CardHeader>
-            <div
-              className={cn(
-                "mx-auto w-16 h-16 bg-gradient-to-br text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4",
-                vault.color,
-              )}
-            >
-              {vault.icon}
-            </div>
-            <CardTitle className="text-2xl">Access Restricted</CardTitle>
-            <CardDescription>
-              You are not whitelisted to mint {vault.asset}. Please contact support for access.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline">Contact Support</Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+    allowance > BigInt(0)
+      ? (Number(formatUnits(mintedAmount, 18)) / Number(formatUnits(allowance, 18))) * 100
+      : 0
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
@@ -425,7 +330,7 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
                     disabled={isLoading || isProcessing}
                     step="0.01"
                     min="0"
-                    max={maxMintable.toString()}
+                    max={(formatUnits(mintedAmount, 18))}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                     <span className="text-muted-foreground font-medium">{vault.asset}</span>
@@ -433,14 +338,14 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
                 </div>
                 <div className="flex justify-between mt-2 text-sm text-muted-foreground">
                   <span>
-                    Available: {maxMintable.toFixed(4)} {vault.asset}
+                    Available: {Number((formatUnits(mintableAmount, 18))).toFixed(4)} {vault.asset}
                   </span>
                   <Button
                     variant="link"
                     size="sm"
                     className="h-auto p-0"
-                    onClick={() => setAmount(maxMintable.toString())}
-                    disabled={isLoading || isProcessing || maxMintable === 0}
+                    onClick={() => setAmount(formatUnits(mintableAmount, 18))}
+                    disabled={isLoading || isProcessing || mintableAmount === BigInt(0)}
                   >
                     Max
                   </Button>
@@ -452,7 +357,7 @@ export default function VaultDepositPage({ params }: { params: Promise<{ id: str
                 disabled={
                   !amount ||
                   Number.parseFloat(amount) <= 0 ||
-                  Number.parseFloat(amount) > maxMintable ||
+                  Number.parseFloat(amount) > Number(formatUnits(mintableAmount, 18)) ||
                   isProcessing ||
                   isLoading ||
                   !isWhitelisted

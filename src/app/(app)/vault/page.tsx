@@ -4,7 +4,10 @@ import { useEffect, useState } from "react"
 import { Lock, Coins, TrendingUp, Shield, AlertCircle, CheckCircle2, Sparkles } from "lucide-react"
 import { RainbowConnectButton } from "@/components/RainbowConnectButton"
 import { useAccount, useChainId } from "wagmi"
-import { BrowserProvider, ethers, ZeroAddress } from "ethers"
+import { readContract } from '@wagmi/core'
+import { formatUnits } from 'viem'
+import { config } from '@/lib/wagmiConfig'
+import { ZeroAddress } from "ethers"
 import assetManagementAbi from "@/abi/assetManagement.json"
 import assetAbi from "@/abi/asset.json"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -287,66 +290,85 @@ export default function VaultsPage() {
       return
     }
 
-    async function checkAllVaults() {
-      setIsLoading(true)
-      try {
-        const provider = new BrowserProvider((window as any).ethereum)
-        const statusUpdates = await Promise.all(
-          vaults.map(async (vault) => {
-            const { whitelistContract, whitelistAbi, id, tokenAddress, tokenAbi } = vault
+    
 
-            if (!whitelistContract || whitelistContract === ZeroAddress) {
-              return { id, whitelisted: null , supply: null, mints: null }
-            }
-            if (!tokenAddress || tokenAddress === ZeroAddress) {
-              return { id, whitelisted: null , supply: null, mints: null }
-            }
+ // or wherever your config is
 
-            try {
-              const code = await provider.getCode(whitelistContract)
-              if (!code || code === "0x") {
-                return { id, whitelisted: null , supply: null , mints: null}
-              }
+async function checkAllVaults() {
+  setIsLoading(true)
+  try {
+    const statusUpdates = await Promise.all(
+      vaults.map(async (vault) => {
+        const { whitelistContract, whitelistAbi, id, tokenAddress, tokenAbi } = vault
 
-              const contract = new ethers.Contract(whitelistContract, whitelistAbi, provider)
-              if (!contract.interface.getFunction("isWhitelisted")) {
-                return { id, whitelisted: null , supply: null, mints: null }
-              }
-
-              const whitelisted = await contract.isWhitelisted(address)
-              const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, provider)
-              const supply = await tokenContract.totalSupply();
-              const mints = await contract.getMintedAmount(address);
-              return { id, whitelisted, supply , mints }
-            } catch (err) {
-              console.error(`Error checking whitelist for vault ${id}:`, err)
-              return { id, whitelisted: false }
-            }
-          }),
-        )
-
-        const newStatus: Record<string, boolean | null> = {}
-        for (const { id, whitelisted , supply,mints } of statusUpdates) {
-          newStatus[id] = whitelisted
-          if (supply) {
-            vaults.find(v => v.id === id)!.totalMinted = (`${ethers.formatUnits(supply, 18)} ${vaults.find(v => v.id === id)!.asset}`)
-          }
-          if (mints){
-            vaults.find(v => v.id === id)!.minted = (`${ethers.formatUnits(mints, 18)} ${vaults.find(v => v.id === id)!.asset}`);
-          }
+        if (!whitelistContract || whitelistContract === '0x0000000000000000000000000000000000000000') {
+          return { id, whitelisted: null, supply: null, mints: null }
         }
-        setWhitelistStatus(newStatus)
-      } catch (error) {
-        console.error("Error checking vaults:", error)
-        toast({
-          title: "Error",
-          description: "Failed to check vault status. Please try again.",
-          variant: "destructive",
-        })
-      } finally {
-        setIsLoading(false)
+
+        if (!tokenAddress || tokenAddress === ZeroAddress) {
+          return { id, whitelisted: null, supply: null, mints: null }
+        }
+
+        try {
+          const [whitelisted, supply, mints] = await Promise.all([
+            readContract(config, {
+              address: whitelistContract as `0x${string}`,
+              abi: whitelistAbi,
+              functionName: 'isWhitelisted',
+              args: address ? [address] : [],
+            }),
+            readContract(config, {
+              address: tokenAddress as `0x${string}`,
+              abi: tokenAbi,
+              functionName: 'totalSupply',
+            }),
+            readContract(config, {
+              address: whitelistContract as `0x${string}`,
+              abi: whitelistAbi,
+              functionName: 'getMintedAmount',
+              args: address ? [address] : [],
+            }),
+          ])
+
+          return { id, whitelisted, supply, mints }
+        } catch (err) {
+          console.error(`Error reading vault ${id}:`, err)
+          return { id, whitelisted: false, supply: null, mints: null }
+        }
+      })
+    )
+
+    const newStatus: Record<string, boolean | null> = {}
+
+    for (const { id, whitelisted, supply, mints } of statusUpdates) {
+      newStatus[id] = whitelisted as boolean
+
+      const vault = vaults.find((v) => v.id === id)
+      if (!vault) continue
+
+      if (supply) {
+        vault.totalMinted = `${formatUnits(supply as bigint, 18)} ${vault.asset}`
+      }
+
+      if (mints) {
+        vault.minted = `${formatUnits(mints as bigint, 18)} ${vault.asset}`
       }
     }
+
+    setWhitelistStatus(newStatus)
+  } catch (error) {
+    console.error('Error checking vaults:', error)
+    toast({
+      title: 'Error',
+      description: 'Failed to check vault status. Please try again.',
+      variant: 'destructive',
+    })
+  } finally {
+    setIsLoading(false)
+  }
+}
+
+
 
     checkAllVaults()
   }, [isConnected, address, isCorrectNetwork, toast])
