@@ -1,392 +1,547 @@
 "use client"
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Plus, Minus, TrendingUp, Coins, Shield, Info } from "lucide-react"
+import { Lock, Coins, TrendingUp, Shield, AlertCircle, CheckCircle2, Sparkles } from "lucide-react"
 import { RainbowConnectButton } from "@/components/RainbowConnectButton"
-import { useAccount } from "wagmi"
-import { ethers } from "ethers"
+import { useAccount, useChainId, usePublicClient } from "wagmi"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Progress } from "@/components/ui/progress"
-import { LoadingSpinner } from "@/components/LoadingSpinner"
+import {LoadingSpinner} from "@/components/LoadingSpinner" // Corrected import
 import { cn } from "@/lib/utils"
+import { CONTRACT_ADDRESSES, SUPPORTED_CHAINS } from "@/lib/constants"
+import earnStakingAbi from "@/abi/earnStaking.json"
+import { formatUnits } from "ethers"
+import { getCoinPrices } from "@/app/actions/get-prices"
 
-export default function EarnPage() {
-  const [depositAmount, setDepositAmount] = useState("")
-  const [withdrawAmount, setWithdrawAmount] = useState("")
-  const [currentDeposit, setCurrentDeposit] = useState(5432.1)
-  const [mode, setMode] = useState<"deposit" | "withdraw">("deposit")
-  const { isConnected, address, chain } = useAccount()
-  const [isWhitelisted, setIsWhitelisted] = useState<boolean | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+// Define a type for the earn pool data including fetched values
+interface EarnPool {
+  id: string
+  asset: string
+  icon: string
+  contractAddress: string
+  stakingTokenAddress: string
+  decimals: number
+  totalStaked: string // Will be fetched
+  apy: string // Placeholder for now
+  myDeposit: string // Will be fetched
+  color: string
+  status: "active" | "coming-soon"
+  description: string
+  coinGeckoId: string // Added for price fetching
+}
+
+// Initial earn pools with placeholders for fetched data
+const initialEarnPools: EarnPool[] = [
+  {
+    id: "doge",
+    asset: "tDOGE",
+    icon: "Ð",
+    contractAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_STAKING_POOL,
+    stakingTokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_TOKEN,
+    decimals: 18, // Assuming 18 decimals for tDOGE
+    totalStaked: "0.00",
+    apy: "15.2%",
+    myDeposit: "0.00",
+    color: "from-yellow-500 to-orange-500",
+    status: "active",
+    description: "Stake your tDOGE to earn rewards",
+    coinGeckoId: "dogecoin",
+  },
+  {
+    id: "litecoin",
+    asset: "tLTC",
+    icon: "Ł",
+    contractAddress: '0x0000000000000000000000000000000000000000', // Placeholder, will be updated
+    // Using a placeholder address for tLTC staking pool
+    stakingTokenAddress: '0x0000000000000000000000000000000000000000', // Placeholder, will be updated
+    decimals: 18, // Assuming 18 decimals for tLTC
+    totalStaked: "0.00",
+    apy: "0.0%",
+    myDeposit: "0.00",
+    color: "from-gray-400 to-gray-600",
+    status: "coming-soon",
+    description: "Stake your tLTC to earn rewards",
+    coinGeckoId: "litecoin",
+  },
+  {
+    id: "bitcoin_cash",
+    asset: "tBCH",
+    icon: "₿",
+    contractAddress: '0x0000000000000000000000000000000000000000', // Placeholder, will be updated
+    stakingTokenAddress: '0x0000000000000000000000000000000000000000', // Placeholder, will be updated
+    decimals: 18, // Assuming 18 decimals for tBCH
+    totalStaked: "0.00",
+    apy: "0.0%",
+    myDeposit: "0.00",
+    color: "from-green-500 to-emerald-600",
+    status: "coming-soon",
+    description: "Stake your tBCH to earn rewards",
+    coinGeckoId: "bitcoin-cash",
+  },
+]
+
+const StatCard = ({ icon, label, value, description, isLoading = false, delay = 0 }) => (
+  <Card
+    className="relative overflow-hidden group hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
+    style={{ animationDelay: `${delay}ms` }}
+  >
+    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+      <CardTitle className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+        {label}
+      </CardTitle>
+      <div className="bg-primary/10 p-2 rounded-lg border border-primary/20 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
+        {icon}
+      </div>
+    </CardHeader>
+    <CardContent className="relative">
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-24 animate-pulse" />
+          <Skeleton className="h-3 w-16 animate-pulse" />
+        </div>
+      ) : (
+        <>
+          <div className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
+            {value}
+          </div>
+          {description && (
+            <p className="text-xs text-muted-foreground mt-1 group-hover:text-muted-foreground/80 transition-colors">
+              {description}
+            </p>
+          )}
+        </>
+      )}
+    </CardContent>
+  </Card>
+)
+
+const EarnPoolCard = ({ pool, onSelect, isLoading, index }) => {
+  const [isHovered, setIsHovered] = useState(false)
+
+  const getStatusBadge = () => {
+    if (pool.status === "coming-soon") {
+      return (
+        <Badge variant="secondary" className="animate-pulse">
+          Coming Soon
+        </Badge>
+      )
+    }
+    if (pool.status === "active") {
+      return (
+        <Badge variant="default" className="bg-green-500 hover:bg-green-600 animate-pulse">
+          <CheckCircle2 size={12} className="mr-1" />
+          Active
+        </Badge>
+      )
+    }
+    return <Skeleton className="h-5 w-20" />
+  }
+
+  const isDisabled = pool.status === "coming-soon"
+
+  return (
+    <Card
+      className={cn(
+        "group relative overflow-hidden transition-all duration-500 hover:shadow-2xl cursor-pointer",
+        "hover:-translate-y-2 hover:scale-[1.02]",
+        isDisabled && "opacity-60 cursor-not-allowed",
+      )}
+      style={{
+        animationDelay: `${index * 100}ms`,
+        animation: "slideInUp 0.6s ease-out forwards",
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => !isDisabled && onSelect(pool)}
+    >
+      <div
+        className={cn(
+          "absolute inset-0 bg-gradient-to-br opacity-5 transition-opacity duration-500",
+          pool.color,
+          isHovered ? "opacity-20" : "opacity-5",
+        )}
+      />
+
+      {/* Sparkle effect for active pools */}
+      {pool.status === "active" && isHovered && (
+        <div className="absolute top-4 right-4 text-yellow-400 animate-pulse">
+          <Sparkles size={16} />
+        </div>
+      )}
+
+      <CardHeader className="relative">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                "bg-gradient-to-br text-white rounded-full h-12 w-12 flex items-center justify-center text-xl font-bold shadow-lg transition-all duration-300",
+                pool.color,
+                isHovered && "scale-110 shadow-xl",
+              )}
+            >
+              {pool.icon}
+            </div>
+            <div>
+              <CardTitle className="text-lg group-hover:text-primary transition-colors">{pool.asset} Pool</CardTitle>
+              <CardDescription className="transition-colors group-hover:text-muted-foreground/80">
+                {pool.description}
+              </CardDescription>
+            </div>
+          </div>
+          {getStatusBadge()}
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4 relative">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Total Staked</p>
+            {isLoading ? (
+              <Skeleton className="h-6 w-24" />
+            ) : (
+              <p className="font-semibold group-hover:text-primary transition-colors">
+                {Number.parseFloat(pool.totalStaked).toFixed(2)} {pool.asset}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">APY</p>
+            {isLoading ? (
+              <Skeleton className="h-6 w-16" />
+            ) : (
+              <p className="font-semibold text-green-600 dark:text-green-400 group-hover:text-green-500 transition-colors">
+                {pool.apy}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-sm text-muted-foreground">My Deposit</p>
+          {isLoading ? (
+            <Skeleton className="h-6 w-20" />
+          ) : (
+            <p className="font-semibold">
+              {Number.parseFloat(pool.myDeposit).toFixed(2)} {pool.asset}
+            </p>
+          )}
+        </div>
+
+        <Button
+          onClick={(e) => {
+            e.stopPropagation()
+            onSelect(pool)
+          }}
+          disabled={isDisabled || isLoading}
+          className={cn("w-full transition-all duration-300 group-hover:scale-105", !isDisabled && "hover:shadow-lg")}
+          variant={isDisabled ? "secondary" : "default"}
+        >
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              <LoadingSpinner size="sm" />
+              Checking...
+            </div>
+          ) : pool.status === "coming-soon" ? (
+            "Coming Soon"
+          ) : (
+            "Open Pool"
+          )}
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+export default function EarnDashboardPage() {
+  const router = useRouter()
+  const { address, isConnected, chain } = useAccount()
+  const chainId = useChainId()
+  const publicClient = usePublicClient({ chainId: SUPPORTED_CHAINS.SEPOLIA })
+
+  const [earnPoolsData, setEarnPoolsData] = useState<EarnPool[]>(initialEarnPools)
+  const [isLoadingData, setIsLoadingData] = useState(true)
   const [pageLoaded, setPageLoaded] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [coinPrices, setCoinPrices] = useState<Record<string, number>>({})
 
   useEffect(() => {
     setPageLoaded(true)
   }, [])
 
+  // Check if we're on Sepolia testnet
+  const isCorrectNetwork = chainId === SUPPORTED_CHAINS.SEPOLIA
+
+  // Fetch contract data and prices
   useEffect(() => {
-    if (isConnected && address) {
-      console.log("Connected address:", address)
-      const WHITELIST_CONTRACT = "0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48"
-      const ABI = ["function isWhitelisted(address user) view returns (bool)"]
-
-      async function checkWhitelist() {
-        setIsLoading(true)
-        try {
-          const provider = new ethers.BrowserProvider(window.ethereum)
-          const contract = new ethers.Contract(WHITELIST_CONTRACT, ABI, provider)
-          const whitelisted = await contract.isWhitelisted(address)
-          setIsWhitelisted(whitelisted)
-          console.log("Whitelist check:", whitelisted)
-        } catch (err) {
-          setIsWhitelisted(false)
-          console.error("Whitelist check error:", err)
-        } finally {
-          setIsLoading(false)
+    const fetchData = async () => {
+      setIsLoadingData(true)
+      try {
+        if (!publicClient) {
+          console.warn("Public client not available for Sepolia.")
+          // We can still try to fetch prices even if publicClient is not ready
         }
+
+        // Fetch prices from CoinGecko
+        const prices = await getCoinPrices()
+        setCoinPrices(prices)
+
+        const updatedPools = await Promise.all(
+          initialEarnPools.map(async (pool) => {
+            let totalStaked = 0n
+            let myDeposit = 0n
+
+            // Only fetch if the pool is active and has a valid contract address
+            if (
+              pool.status === "active" &&
+              pool.contractAddress !== "0x0000000000000000000000000000000000000000" &&
+              publicClient
+            ) {
+              try {
+                // Fetch total staked
+                const totalStakedResult = await publicClient.readContract({
+                  address: pool.contractAddress as `0x${string}`,
+                  abi: earnStakingAbi,
+                  functionName: "totalStaked",
+                })
+                totalStaked = totalStakedResult as bigint
+
+                // Fetch user's staked balance if connected
+                if (isConnected && address) {
+                  const myDepositResult = await publicClient.readContract({
+                    address: pool.contractAddress as `0x${string}`,
+                    abi: earnStakingAbi,
+                    functionName: "getStakedBalance",
+                    args: [address],
+                  })
+                  myDeposit = myDepositResult as bigint
+                }
+              } catch (contractError) {
+                console.error(`Error fetching data for ${pool.asset} pool:`, contractError)
+                // Fallback to default 0 values if contract call fails
+                totalStaked = 0n
+                myDeposit = 0n
+              }
+            }
+
+            return {
+              ...pool,
+              totalStaked: formatUnits(totalStaked, pool.decimals),
+              myDeposit: formatUnits(myDeposit, pool.decimals),
+            }
+          }),
+        )
+        setEarnPoolsData(updatedPools)
+      } catch (error) {
+        console.error("Failed to fetch earn pool data or prices:", error)
+      } finally {
+        setIsLoadingData(false)
       }
-      checkWhitelist()
-    }
-  }, [isConnected, address])
-
-  const handleAction = async () => {
-    const amount = Number.parseFloat(mode === "deposit" ? depositAmount : withdrawAmount)
-    if (isNaN(amount) || amount <= 0) return
-
-    setIsProcessing(true)
-
-    // Simulate transaction processing
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    console.log("Earn action:", mode, amount)
-    if (mode === "deposit") {
-      setCurrentDeposit((prev) => prev + amount)
-      setDepositAmount("")
-    } else {
-      setCurrentDeposit((prev) => Math.max(0, prev - amount))
-      setWithdrawAmount("")
     }
 
-    setIsProcessing(false)
+    fetchData()
+  }, [publicClient, isConnected, address, chainId]) // Re-fetch if publicClient, connection, address, or chain changes
+
+  const onSelectPool = (pool: EarnPool) => {
+    if (pool.status === "coming-soon") return
+    router.push(`/earn/${pool.id}`)
   }
 
-  const poolStats = {
-    totalDeposited: "25.7M",
-    currentAPY: "15.2%",
-    yourShare: "0.021%",
-    pendingRewards: "127.45",
-  }
+  // Calculate total value staked in USD
+  const totalValueStakedUSD = earnPoolsData.reduce((sum, pool) => {
+    const stakedAmount = Number.parseFloat(pool.totalStaked)
+    let price = 0
+    if (pool.coinGeckoId === "dogecoin") price = coinPrices.dogecoin
+    else if (pool.coinGeckoId === "litecoin") price = coinPrices.litecoin
+    else if (pool.coinGeckoId === "bitcoin-cash") price = coinPrices.bitcoin_cash
 
-  const StatsCard = ({ icon, label, value, description, delay = 0 }) => (
-    <Card
-      className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-      style={{ animationDelay: `${delay}ms` }}
-    >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-        <div className="bg-primary/10 p-2 rounded-lg border border-primary/20">{icon}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-foreground">{value}</div>
-        {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
-      </CardContent>
-    </Card>
-  )
+    return sum + stakedAmount * price
+  }, 0)
+
+  // Calculate total staked for each asset type
+  const totalStakedDOGE = earnPoolsData.find((p) => p.id === "doge")?.totalStaked || "0.00"
+  const totalStakedLTC = earnPoolsData.find((p) => p.id === "litecoin")?.totalStaked || "0.00"
+  const totalStakedBCH = earnPoolsData.find((p) => p.id === "bitcoin_cash")?.totalStaked || "0.00"
+
+  // Placeholder for total rewards distributed (needs contract function or historical data)
+  const totalRewardsDistributed = "0" // Keep as placeholder for now
+
+  // Placeholder for average APY (needs real APY calculation logic)
+  const averageAPY = "12.5%" // Keep as placeholder for now
+
+  const activePoolCount = earnPoolsData.filter((p) => p.status === "active").length
 
   return (
     <div
       className={cn(
-        "container mx-auto p-4 md:p-8 max-w-6xl transition-all duration-700",
+        "container mx-auto p-4 md:p-8 max-w-7xl transition-all duration-700",
         pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
       )}
     >
-      {/* Header */}
+      {/* Header Section */}
       <div className="mb-8 text-center md:text-left">
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-          Stability Pool
+          Earn Dashboard
         </h1>
         <p className="text-muted-foreground text-lg md:text-xl max-w-2xl">
-          Deposit your tDOGE into the Stability Pool to earn rewards and help maintain protocol stability
+          Stake your assets in various pools to earn passive income
         </p>
       </div>
 
+      {/* Wallet Info Alert */}
+      {/* <Alert className="mb-8 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors duration-300">
+        {isConnected && isCorrectNetwork ? (
+          <CheckCircle2 className="h-4 w-4 text-primary" />
+        ) : (
+          <AlertCircle className="h-4 w-4 text-yellow-500" />
+        )}
+        <AlertDescription className="flex items-center justify-between w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
+            <span className="flex items-center gap-2">
+              <span className="text-muted-foreground">Network:</span>
+              <Badge variant="outline" className="font-mono">
+                {chain?.name || "Unknown"}
+              </Badge>
+            </span>
+            <span className="hidden sm:inline text-muted-foreground">•</span>
+            <span className="flex items-center gap-2">
+              <span className="text-muted-foreground">Address:</span>
+              <code className="bg-secondary px-2 py-1 rounded text-xs font-mono">
+                {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "N/A"}
+              </code>
+            </span>
+          </div>
+          <div className="hidden sm:block">
+            <RainbowConnectButton />
+          </div>
+        </AlertDescription>
+      </Alert> */}
+
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatsCard
-          icon={<Coins size={20} className="text-primary" />}
-          label="Total Deposited"
-          value={poolStats.totalDeposited + " tDOGE"}
-          description="Pool liquidity"
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <StatCard
+          icon={<Lock size={20} className="text-primary" />}
+          label="Total Value Staked"
+          value={isLoadingData ? null : `$${totalValueStakedUSD.toFixed(2)}`}
+          description="Across all pools"
+          isLoading={isLoadingData}
           delay={0}
         />
-        <StatsCard
-          icon={<TrendingUp size={20} className="text-primary" />}
-          label="Current APY"
-          value={poolStats.currentAPY}
-          description="Annual percentage yield"
+        <StatCard
+          icon={<Coins size={20} className="text-primary" />}
+          label="Total Rewards Distributed"
+          value={isLoadingData ? null : totalRewardsDistributed}
+          description="Since inception"
+          isLoading={isLoadingData}
           delay={100}
         />
-        <StatsCard
-          icon={<Shield size={20} className="text-primary" />}
-          label="Your Share"
-          value={poolStats.yourShare}
-          description="Of total pool"
+        <StatCard
+          icon={<TrendingUp size={20} className="text-primary" />}
+          label="Average APY"
+          value={isLoadingData ? null : averageAPY}
+          description="Weighted average"
+          isLoading={isLoadingData}
           delay={200}
         />
-        <StatsCard
-          icon={<Plus size={20} className="text-primary" />}
-          label="Pending Rewards"
-          value={poolStats.pendingRewards + " tDOGE"}
-          description="Ready to claim"
+        <StatCard
+          icon={<Shield size={20} className="text-primary" />}
+          label="Active Pools"
+          value={isLoadingData ? null : activePoolCount.toString()}
+          description="More coming soon"
+          isLoading={isLoadingData}
           delay={300}
         />
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Pool Card */}
-        <div className="lg:col-span-2">
-          <Card className="hover:shadow-xl transition-all duration-300">
+      {/* Total Staked by Asset Type */}
+      <div className="mb-12">
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6">Total Staked by Asset</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    <div className="bg-gradient-to-br from-yellow-500 to-orange-500 p-2 rounded-lg text-white">Ð</div>
-                    Stability Pool
-                  </CardTitle>
-                  <CardDescription>Earn rewards by providing stability to the protocol</CardDescription>
-                </div>
-                {isWhitelisted && (
-                  <Badge variant="default" className="bg-green-500">
-                    Whitelisted
-                  </Badge>
-                )}
-              </div>
+              <CardTitle className="text-lg">tDOGE Staked</CardTitle>
             </CardHeader>
-
-            <CardContent className="space-y-6">
-              {/* Wallet Info */}
-              {/* <Alert className="border-primary/20 bg-primary/5">
-                <Info className="h-4 w-4" />
-                <AlertDescription className="flex items-center justify-between w-full">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
-                    <span>
-                      Network: <strong>{chain?.name || "Unknown"}</strong>
-                    </span>
-                    <span className="hidden sm:inline">•</span>
-                    <span>
-                      Address:{" "}
-                      <code className="bg-secondary px-2 py-1 rounded text-xs">
-                        {address?.slice(0, 6)}...{address?.slice(-4)}
-                      </code>
-                    </span>
-                  </div>
-                  <RainbowConnectButton />
-                </AlertDescription>
-              </Alert> */}
-
-              {/* Your Position */}
-              <div className="bg-secondary/30 p-4 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-muted-foreground">Your Deposit</span>
-                  <span className="text-2xl font-bold text-foreground">{currentDeposit.toLocaleString()} tDOGE</span>
-                </div>
-                <Progress value={65} className="h-2 mb-2" />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Pool share: {poolStats.yourShare}</span>
-                  <span>Earning {poolStats.currentAPY} APY</span>
-                </div>
-              </div>
-
-              {/* Mode Toggle */}
-              <div className="flex bg-secondary/30 rounded-lg p-1">
-                <button
-                  onClick={() => setMode("deposit")}
-                  className={cn(
-                    "w-1/2 py-3 rounded-md font-semibold transition-all duration-200",
-                    mode === "deposit"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-secondary/50",
-                  )}
-                >
-                  <Plus size={16} className="inline mr-2" />
-                  Deposit
-                </button>
-                <button
-                  onClick={() => setMode("withdraw")}
-                  className={cn(
-                    "w-1/2 py-3 rounded-md font-semibold transition-all duration-200",
-                    mode === "withdraw"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-secondary/50",
-                  )}
-                >
-                  <Minus size={16} className="inline mr-2" />
-                  Withdraw
-                </button>
-              </div>
-
-              {/* Input Section */}
-              <div className="space-y-4">
-                {mode === "deposit" ? (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground block">Amount to deposit</label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        placeholder="0.00"
-                        value={depositAmount}
-                        onChange={(e) => setDepositAmount(e.target.value)}
-                        className="text-xl h-12 pr-20"
-                        disabled={isProcessing}
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
-                        tDOGE
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>Available: 10,000 tDOGE</span>
-                      <Button variant="link" size="sm" className="h-auto p-0">
-                        Max
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-muted-foreground block">Amount to withdraw</label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        placeholder="0.00"
-                        value={withdrawAmount}
-                        onChange={(e) => setWithdrawAmount(e.target.value)}
-                        className="text-xl h-12 pr-20"
-                        disabled={isProcessing}
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
-                        tDOGE
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>Deposited: {currentDeposit.toLocaleString()} tDOGE</span>
-                      <Button variant="link" size="sm" className="h-auto p-0">
-                        Max
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                <Button
-                  onClick={handleAction}
-                  disabled={
-                    isProcessing ||
-                    !isWhitelisted ||
-                    (mode === "deposit" && (!depositAmount || Number.parseFloat(depositAmount) <= 0)) ||
-                    (mode === "withdraw" && (!withdrawAmount || Number.parseFloat(withdrawAmount) <= 0))
-                  }
-                  className="w-full h-12 text-base"
-                  size="lg"
-                >
-                  {isProcessing ? (
-                    <>
-                      <LoadingSpinner size="sm" className="mr-2" />
-                      Processing...
-                    </>
-                  ) : mode === "deposit" ? (
-                    <>
-                      <Plus size={20} className="mr-2" />
-                      Deposit
-                    </>
-                  ) : (
-                    <>
-                      <Minus size={20} className="mr-2" />
-                      Withdraw
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Rewards Card */}
-          <Card className="hover:shadow-lg transition-all duration-300">
-            <CardHeader>
-              <CardTitle className="text-lg">Your Rewards</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {isLoading ? (
-                <div className="space-y-3">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="h-3 bg-muted rounded animate-pulse" />
-                      <div className="h-4 bg-muted rounded animate-pulse w-2/3" />
-                    </div>
-                  ))}
-                </div>
+            <CardContent>
+              {isLoadingData ? (
+                <Skeleton className="h-8 w-32" />
               ) : (
-                <>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Pending Rewards</p>
-                    <p className="text-lg font-semibold text-green-600">{poolStats.pendingRewards} tDOGE</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Earned</p>
-                    <p className="text-lg font-semibold">1,234.56 tDOGE</p>
-                  </div>
-                  <Button className="w-full bg-transparent" variant="outline">
-                    Claim Rewards
-                  </Button>
-                </>
+                <p className="text-2xl font-bold">{Number.parseFloat(totalStakedDOGE).toFixed(2)} tDOGE</p>
               )}
             </CardContent>
           </Card>
-
-          {/* Pool Info */}
-          <Card className="hover:shadow-lg transition-all duration-300">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Pool Information</CardTitle>
+              <CardTitle className="text-lg">tLTC Staked</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total Liquidity</span>
-                <span className="font-medium">{poolStats.totalDeposited} tDOGE</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Current APY</span>
-                <span className="font-medium text-green-600">{poolStats.currentAPY}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Pool Utilization</span>
-                <span className="font-medium">78.5%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Lock Period</span>
-                <span className="font-medium">None</span>
-              </div>
+            <CardContent>
+              {isLoadingData ? (
+                <Skeleton className="h-8 w-32" />
+              ) : (
+                <p className="text-2xl font-bold">{Number.parseFloat(totalStakedLTC).toFixed(2)} tLTC</p>
+              )}
             </CardContent>
           </Card>
-
-          {/* Risk Info */}
-          <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/20">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-lg text-yellow-800 dark:text-yellow-200">Risk Information</CardTitle>
+              <CardTitle className="text-lg">tBCH Staked</CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-yellow-700 dark:text-yellow-300">
-              <p>
-                Stability Pool deposits may be used to liquidate risky positions. While this is rare, depositors are
-                compensated with liquidation bonuses.
-              </p>
+            <CardContent>
+              {isLoadingData ? (
+                <Skeleton className="h-8 w-32" />
+              ) : (
+                <p className="text-2xl font-bold">{Number.parseFloat(totalStakedBCH).toFixed(2)} tBCH</p>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Earn Pools Section */}
+      <div className="mb-12">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Available Earn Pools</h2>
+          {isLoadingData && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <LoadingSpinner size="sm" />
+              <span className="text-sm">Loading pool data...</span>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {earnPoolsData.map((pool, index) => (
+            <EarnPoolCard key={pool.id} pool={pool} onSelect={onSelectPool} isLoading={isLoadingData} index={index} />
+          ))}
+        </div>
+      </div>
+
+      {/* Help Section */}
+      <Card className="border-border/50 hover:border-primary/20 transition-all duration-300 hover:shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <AlertCircle className="w-5 h-5 text-primary" />
+            Need Help with Staking?
+          </CardTitle>
+          <CardDescription className="text-base">
+            Learn how our earn pools work and discover strategies to maximize your passive income safely.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button variant="outline" size="sm" className="hover:scale-105 transition-transform bg-transparent">
+              📚 Read Documentation
+            </Button>
+            <Button variant="outline" size="sm" className="hover:scale-105 transition-transform bg-transparent">
+              💬 Join Discord
+            </Button>
+            <Button variant="outline" size="sm" className="hover:scale-105 transition-transform bg-transparent">
+              🎥 Watch Tutorials
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
