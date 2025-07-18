@@ -24,6 +24,7 @@ import assetManagementAbi from "@/abi/assetManagement.json"
 import assetAbi from "@/abi/asset.json"
 import { cn } from "@/lib/utils"
 import { useAccount, useChainId } from "wagmi"
+import { CONTRACT_ADDRESSES, EXPLORER_URLS, SUPPORTED_CHAINS } from "@/lib/constants"
 
 interface VaultParams {
   id: string
@@ -44,24 +45,24 @@ const getVaultData = (id: string) => {
     doge: {
       asset: "tDOGE",
       icon: "Ð",
-      contractAddress: "0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48",
-      assetAddress: "0x46507E8929Fe9C20c8914fc9036829F6e7740D9D",
+      contractAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_ASSET_MANAGEMENT,
+      assetAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_TOKEN,
       color: "from-yellow-500 to-orange-500",
       description: "Tokenized Dogecoin for DeFi applications",
     },
     litecoin: {
       asset: "tLTC",
       icon: "Ł",
-      contractAddress: "0x1111111111111111111111111111111111111111",
-      assetAddress: "0x2222222222222222222222222222222222222222",
+      contractAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT,
+      assetAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN,
       color: "from-gray-400 to-gray-600",
       description: "Tokenized Litecoin for DeFi applications",
     },
     bitcoin_cash: {
       asset: "tBCH",
       icon: "Ƀ",
-      contractAddress: "0x2222222222222222222222222222222222222222",
-      assetAddress: "0x3333333333333333333333333333333333333333",
+      contractAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT,
+      assetAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
       color: "from-green-500 to-emerald-600",
       description: "Tokenized Bitcoin Cash for DeFi applications",
     },
@@ -108,7 +109,8 @@ export default function VaultDepositPage({ params }: { params: VaultParams }) {
   const [error, setError] = useState<string | null>(null)
 
   // Check if we're on Sepolia testnet
-  const isCorrectNetwork = chainId === 11155111
+  const isCorrectNetwork = chainId === SUPPORTED_CHAINS.SEPOLIA
+  const explorerUrl = EXPLORER_URLS[chainId as keyof typeof EXPLORER_URLS] || EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA]
 
   useEffect(() => {
     const connect = async () => {
@@ -571,7 +573,7 @@ export default function VaultDepositPage({ params }: { params: VaultParams }) {
                 {modalContent.isSuccess && modalContent.txHash && (
                   <Button asChild variant="outline" size="sm">
                     <a
-                      href={`https://sepolia.etherscan.io/tx/${modalContent.txHash}`}
+                      href={`${explorerUrl}/tx/${modalContent.txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2"

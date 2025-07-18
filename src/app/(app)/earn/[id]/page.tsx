@@ -54,16 +54,16 @@ const getEarnPoolData = (id: string) => {
     litecoin: {
       asset: "tLTC",
       icon: "Ł",
-      contractAddress: '0x0000000000000000000000000000000000000000', // Placeholder
-      stakingTokenAddress: '0x0000000000000000000000000000000000000000', // Placeholder
+      contractAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_STAKING_POOL,
+      stakingTokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN,
       color: "from-gray-400 to-gray-600",
       description: "Stake your tLTC to earn rewards",
     },
     bitcoin_cash: {
       asset: "tBCH",
       icon: "₿",
-      contractAddress: '0x0000000000000000000000000000000000000000', // Placeholder
-      stakingTokenAddress: '0x0000000000000000000000000000000000000000', // Placeholder
+      contractAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_STAKING_POOL,
+      stakingTokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
       color: "from-green-500 to-emerald-600",
       description: "Stake your tBCH to earn rewards",
     },

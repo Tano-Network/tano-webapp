@@ -54,9 +54,8 @@ const initialEarnPools: EarnPool[] = [
     id: "litecoin",
     asset: "tLTC",
     icon: "Ł",
-    contractAddress: '0x0000000000000000000000000000000000000000', // Placeholder, will be updated
-    // Using a placeholder address for tLTC staking pool
-    stakingTokenAddress: '0x0000000000000000000000000000000000000000', // Placeholder, will be updated
+    contractAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_STAKING_POOL, // Placeholder, will be updated
+    stakingTokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN, // Placeholder, will be updated
     decimals: 18, // Assuming 18 decimals for tLTC
     totalStaked: "0.00",
     apy: "0.0%",
@@ -70,8 +69,8 @@ const initialEarnPools: EarnPool[] = [
     id: "bitcoin_cash",
     asset: "tBCH",
     icon: "₿",
-    contractAddress: '0x0000000000000000000000000000000000000000', // Placeholder, will be updated
-    stakingTokenAddress: '0x0000000000000000000000000000000000000000', // Placeholder, will be updated
+    contractAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_STAKING_POOL, // Placeholder, will be updated
+    stakingTokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN, // Placeholder, will be updated
     decimals: 18, // Assuming 18 decimals for tBCH
     totalStaked: "0.00",
     apy: "0.0%",

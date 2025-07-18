@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { CONTRACT_ADDRESSES, EXPLORER_URLS, SUPPORTED_CHAINS } from "@/lib/constants"
 
 const vaults = [
   {
@@ -23,7 +24,7 @@ const vaults = [
     totalLocked: "150.5M tDOGE",
     apy: "12.8%",
     myDeposit: "0.00",
-    whitelistContract: "0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48",
+    whitelistContract: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_ASSET_MANAGEMENT,
     whitelistAbi: assetManagementAbi,
     color: "from-yellow-500 to-orange-500",
     status: "active",
@@ -36,7 +37,7 @@ const vaults = [
     totalLocked: "250.2 tLTC",
     apy: "8.2%",
     myDeposit: "0.00",
-    whitelistContract: "0x0000000000000000000000000000000000000000",
+    whitelistContract: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT,
     whitelistAbi: assetManagementAbi,
     color: "from-gray-400 to-gray-600",
     status: "coming-soon",
@@ -49,7 +50,7 @@ const vaults = [
     totalLocked: "5,120 tBCH",
     apy: "9.5%",
     myDeposit: "0.00",
-    whitelistContract: "0x0000000000000000000000000000000000000000",
+    whitelistContract: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT,
     whitelistAbi: assetManagementAbi,
     color: "from-green-500 to-emerald-600",
     status: "coming-soon",
