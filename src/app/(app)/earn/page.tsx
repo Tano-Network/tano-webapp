@@ -2,13 +2,11 @@
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Lock, Coins, TrendingUp, Shield, AlertCircle, CheckCircle2, Sparkles } from "lucide-react"
-import { RainbowConnectButton } from "@/components/RainbowConnectButton"
 import { useAccount, useChainId, usePublicClient } from "wagmi"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import {LoadingSpinner} from "@/components/LoadingSpinner" // Corrected import
 import { cn } from "@/lib/utils"
 import { CONTRACT_ADDRESSES, SUPPORTED_CHAINS } from "@/lib/constants"

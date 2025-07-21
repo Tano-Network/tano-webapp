@@ -2,7 +2,6 @@
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Lock, Coins, TrendingUp, Shield, AlertCircle, CheckCircle2, Sparkles } from "lucide-react"
-import { RainbowConnectButton } from "@/components/RainbowConnectButton"
 import { useAccount, useChainId } from "wagmi"
 import { readContract } from '@wagmi/core'
 import { formatUnits } from 'viem'

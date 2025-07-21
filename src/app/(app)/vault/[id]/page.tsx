@@ -21,10 +21,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { useToast } from "@/hooks/use-toast"
-
 import assetManagementAbi from "@/abi/assetManagement.json"
 import assetAbi from "@/abi/asset.json"
 import { config } from "@/lib/wagmiConfig"
