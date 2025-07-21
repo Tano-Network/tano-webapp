@@ -1,28 +1,60 @@
-"use client"
-import { useEffect, useState } from "react"
-import { Layers, TrendingUp, Shield, ChevronsRight, Zap, Users, Globe, ArrowRight } from "lucide-react"
-import Link from "next/link"
-import { HomeHeader } from "@/components/HomeHeader"
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+"use client";
+import { useEffect, useState } from "react";
+import {
+  Layers,
+  TrendingUp,
+  Shield,
+  ChevronsRight,
+  Zap,
+  Users,
+  Globe,
+  ArrowRight,
+} from "lucide-react";
+import Link from "next/link";
+import { HomeHeader } from "@/components/HomeHeader";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 interface StatCardProps {
-  icon: React.ReactNode
-  label: string
-  value: string | number
-  subValue?: string | number
-  description?: string
-  delay?: number
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  subValue?: string | number;
+  description?: string;
+  delay?: number;
 }
 interface FeatureCardProps {
-  icon: React.ReactNode
-  title: string
-  description: string
-  badge?: string
-  delay?: number
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  badge?: string;
+  delay?: number;
 }
-const StatCard = ({ icon, label, value, subValue, description, delay = 0 }  : StatCardProps) => (
+/**
+ * A card component for displaying a statistic, with a gradient background
+ * and a loading state.
+ *
+ * @param {React.ReactNode} icon - The icon to display
+ * @param {string} label - The label to display
+ * @param {string | number} value - The value to display
+ * @param {string | number} [subValue] - An optional sub-value to display
+ * @param {string} [description] - An optional description to display
+ * @param {number} [delay=0] - The animation delay in milliseconds
+ */
+const StatCard = ({
+  icon,
+  label,
+  value,
+  subValue,
+  description,
+  delay = 0,
+}: StatCardProps) => (
   <Card
     className="group relative overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
     style={{
@@ -53,9 +85,26 @@ const StatCard = ({ icon, label, value, subValue, description, delay = 0 }  : St
       )}
     </CardHeader>
   </Card>
-)
+);
 
-const FeatureCard = ({ icon, title, description, badge, delay = 0 } : FeatureCardProps) => (
+/**
+ * A card component for displaying a feature, with a gradient background
+ * and a loading state.
+ *
+ * @param {React.ReactNode} icon - The icon to display
+ * @param {string} title - The title to display
+ * @param {string} description - The description to display
+ * @param {string | null} badge - The badge to display, or null for no badge
+ * @param {number} [delay=0] - The animation delay in milliseconds
+ */
+
+const FeatureCard = ({
+  icon,
+  title,
+  description,
+  badge,
+  delay = 0,
+}: FeatureCardProps) => (
   <Card
     className="group hover:shadow-xl transition-all duration-500 border-border/50 hover:border-primary/20 hover:-translate-y-1"
     style={{
@@ -69,28 +118,49 @@ const FeatureCard = ({ icon, title, description, badge, delay = 0 } : FeatureCar
           {icon}
         </div>
         {badge && (
-          <Badge variant="secondary" className="group-hover:scale-105 transition-transform">
+          <Badge
+            variant="secondary"
+            className="group-hover:scale-105 transition-transform"
+          >
             {badge}
           </Badge>
         )}
       </div>
-      <CardTitle className="text-xl group-hover:text-primary transition-colors duration-300">{title}</CardTitle>
+      <CardTitle className="text-xl group-hover:text-primary transition-colors duration-300">
+        {title}
+      </CardTitle>
       <CardDescription className="text-muted-foreground leading-relaxed group-hover:text-muted-foreground/80 transition-colors">
         {description}
       </CardDescription>
     </CardHeader>
   </Card>
-)
+);
 
+/**
+ * The homepage of the Tano Finance app.
+ *
+ * This component is responsible for rendering the main landing page of the
+ * application. It includes a hero section with a background animation, a
+ * statistics section with real-time metrics, and a features section describing
+ * the benefits of using Tano Finance.
+ *
+ * The page is animated using CSS animations and transitions, with a loading
+ * state that fades in the content after the page has finished loading.
+ */
 export default function HomePage() {
-  const [pageLoaded, setPageLoaded] = useState(false)
+  const [pageLoaded, setPageLoaded] = useState(false);
 
   useEffect(() => {
-    setPageLoaded(true)
-  }, [])
+    setPageLoaded(true);
+  }, []);
 
   return (
-    <div className={cn("transition-all duration-700", pageLoaded ? "opacity-100" : "opacity-0")}>
+    <div
+      className={cn(
+        "transition-all duration-700",
+        pageLoaded ? "opacity-100" : "opacity-0"
+      )}
+    >
       <HomeHeader />
 
       {/* Hero Section */}
@@ -123,8 +193,8 @@ export default function HomePage() {
               animationFillMode: "forwards",
             }}
           >
-            Unlock the power of your cryptocurrency. Earn sustainable yield and participate in the future of
-            decentralized finance.
+            Unlock the power of your cryptocurrency. Earn sustainable yield and
+            participate in the future of decentralized finance.
           </div>
 
           <div
@@ -142,7 +212,10 @@ export default function HomePage() {
             >
               <Link href="/vault" className="flex items-center gap-2">
                 Launch App
-                <ChevronsRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <ChevronsRight
+                  size={20}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
               </Link>
             </Button>
             <Button
@@ -163,7 +236,9 @@ export default function HomePage() {
 
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Platform Statistics</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Platform Statistics
+            </h2>
             <div className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
               Real-time metrics from our growing ecosystem
             </div>
@@ -210,9 +285,12 @@ export default function HomePage() {
       <section id="features" className="py-20 px-4 relative">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Why Choose Tano Finance?</h2>
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Why Choose Tano Finance?
+            </h2>
             <div className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">
-              Built for the future of DeFi with security, transparency, and user experience at the core
+              Built for the future of DeFi with security, transparency, and user
+              experience at the core
             </div>
           </div>
 
@@ -265,15 +343,25 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-grid-pattern opacity-20" />
 
         <div className="max-w-4xl mx-auto text-center relative">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">Ready to Start Earning?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            Ready to Start Earning?
+          </h2>
           <div className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of users already earning yield on their crypto assets with Tano Finance.
+            Join thousands of users already earning yield on their crypto assets
+            with Tano Finance.
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" className="text-lg px-8 py-6 hover:scale-105 transition-all duration-300 group">
+            <Button
+              asChild
+              size="lg"
+              className="text-lg px-8 py-6 hover:scale-105 transition-all duration-300 group"
+            >
               <Link href="/vault" className="flex items-center gap-2">
                 Get Started Now
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <ArrowRight
+                  size={20}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
               </Link>
             </Button>
             <Button
@@ -288,5 +376,5 @@ export default function HomePage() {
         </div>
       </section>
     </div>
-  )
+  );
 }
