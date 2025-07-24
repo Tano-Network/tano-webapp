@@ -1,8 +1,11 @@
+"use client";
 
-'use client';
-import { useState, useEffect, use } from 'react';
-import Link from 'next/link';
-import { Zap, CheckCircle2 } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { parseUnits, formatUnits } from "viem";
+import { useAccount, useChainId, useWriteContract } from "wagmi";
+import { readContract, waitForTransactionReceipt } from "wagmi/actions";
+import Link from "next/link";
+import { CheckCircle2, ExternalLink, ArrowLeft, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,238 +15,611 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Slider } from "@/components/ui/slider"
-import { Label } from '@/components/ui/label';
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import assetManagementAbi from "@/abi/assetManagement.json";
+import assetAbi from "@/abi/asset.json";
+import { config } from "@/lib/wagmiConfig";
+import { cn } from "@/lib/utils";
+import {
+  CONTRACT_ADDRESSES,
+  EXPLORER_URLS,
+  SUPPORTED_CHAINS,
+} from "@/lib/constants";
 
-const WalletConnectButton = ({ walletName, onConnect, isConnected, address }) => (
-  <div className="bg-secondary p-4 rounded-lg border flex items-center justify-between">
-    <div>
-      <p className="font-semibold text-foreground">{walletName}</p>
-      {isConnected && <p className="text-xs text-muted-foreground font-mono break-all">{address}</p>}
-    </div>
-    <button
-      onClick={onConnect}
-      disabled={isConnected}
-      className={`px-4 py-2 rounded-md text-sm font-semibold transition-all duration-300 ${
-        isConnected
-          ? 'bg-green-500/20 text-green-400 cursor-not-allowed'
-          : 'bg-primary/80 hover:bg-primary text-primary-foreground'
-      }`}
-    >
-      {isConnected ? 'Connected' : `Connect ${walletName}`}
-    </button>
-  </div>
-);
+type VaultKey = "doge" | "litecoin" | "bitcoin_cash";
 
-
+/**
+ * Returns the vault data for a given id.
+ * If the id is not found, a default object is returned with placeholder values.
+ *
+ * @param id - The id of the vault (e.g., "doge", "litecoin", etc.)
+ * @returns An object containing the vault data
+ */
 const getVaultData = (id: string) => {
-    const vaults: Record<string, { asset: string; icon: string }> = {
-        doge: { asset: 'DOGE', icon: 'Ð' },
-        wbtc: { asset: 'wBTC', icon: '₿' },
-        eth: { asset: 'ETH', icon: 'Ξ' },
-    };
-    return vaults[id] || vaults.doge;
+  const vaults: Record<
+    VaultKey,
+    {
+      asset: string;
+      icon: string;
+      contractAddress: string;
+      assetAddress: string;
+      color: string;
+      description: string;
+    }
+  > = {
+    doge: {
+      asset: "tDOGE",
+      icon: "Ð",
+      contractAddress:
+        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_ASSET_MANAGEMENT,
+      assetAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_TOKEN,
+      color: "from-yellow-500 to-orange-500",
+      description: "Tokenized Dogecoin for DeFi applications",
+    },
+    litecoin: {
+      asset: "tLTC",
+      icon: "Ł",
+      contractAddress:
+        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT,
+      assetAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN,
+      color: "from-gray-400 to-gray-600",
+      description: "Tokenized Litecoin for DeFi applications",
+    },
+    bitcoin_cash: {
+      asset: "tBCH",
+      icon: "Ƀ",
+      contractAddress:
+        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT,
+      assetAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
+      color: "from-green-500 to-emerald-600",
+      description: "Tokenized Bitcoin Cash for DeFi applications",
+    },
+  };
+
+  if (id in vaults) {
+    return vaults[id as VaultKey];
+  }
+
+  // fallback if id is not valid
+  return {
+    asset: "Unknown",
+    icon: "?",
+    contractAddress: "0x0000000000000000000000000000000000000000",
+    assetAddress: "0x0000000000000000000000000000000000000000",
+    color: "from-gray-400 to-gray-600",
+    description: "Unknown asset",
+  };
 };
 
+/**
+ * Page for minting a specific vault asset.
+ *
+ * @param {{ id: string }} params Page parameter containing the vault ID.
+ * @returns {JSX.Element} The page component.
+ */
+export default function VaultDepositPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const [vaultId, setVaultId] = useState<string | null>(null);
+  const [vault, setVault] = useState<ReturnType<typeof getVaultData> | null>(
+    null
+  );
+  const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { toast } = useToast();
+  const { writeContractAsync } = useWriteContract();
+  const [amount, setAmount] = useState("");
+  const [isWhitelisted, setIsWhitelisted] = useState(false);
+  const [mintableAmount, setMintableAmount] = useState<bigint>(BigInt(0));
+  const [mintedAmount, setMintedAmount] = useState<bigint>(BigInt(0));
+  const [allowance, setAllowance] = useState<bigint>(BigInt(0));
+  const [currentAssetBalance, setCurrentAssetBalance] = useState<bigint>(
+    BigInt(0)
+  );
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalContent, setModalContent] = useState({
+    title: "",
+    description: "",
+    isSuccess: false,
+    txHash: undefined as string | undefined,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default function VaultDepositPage({ params }: { params: { id: string } }) {
-    const { id } = use(params);
-    const vault = getVaultData(id);
-    const [dogeAmount, setDogeAmount] = useState('');
-    const [tDogeAmount, setTDogeAmount] = useState('');
-    const [lockingPeriod, setLockingPeriod] = useState(3);
-    const [isPeriodSigned, setIsPeriodSigned] = useState(false);
+  const isCorrectNetwork = chainId === SUPPORTED_CHAINS.SEPOLIA;
+  const explorerUrl =
+    EXPLORER_URLS[chainId as keyof typeof EXPLORER_URLS] ||
+    EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA];
 
-    const [dogeWalletConnected, setDogeWalletConnected] = useState(false);
-    const [evmWalletConnected, setEvmWalletConnected] = useState(false);
-    const [dogeAddress, setDogeAddress] = useState('');
-    const [evmAddress, setEvmAddress] = useState('');
-    
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [processingStep, setProcessingStep] = useState(''); // 'signing', 'minting'
-    const [showModal, setShowModal] = useState(false);
-    const [modalContent, setModalContent] = useState({ title: '', description: '', isSuccess: false });
+  useEffect(() => {
+    let mounted = true;
 
+    /**
+     * Initializes the vault deposit page by resolving the page parameter and
+     * fetching necessary data from the vault and asset contracts.
+     *
+     * @returns {Promise<void>}
+     */
+    const initialize = async () => {
+      // Resolve params and set vaultId
+      const { id } = await params;
+      if (!mounted) return;
+      setVaultId(id);
+      const vaultData = getVaultData(id);
+      setVault(vaultData);
 
-    useEffect(() => {
-        setTDogeAmount(dogeAmount);
-    }, [dogeAmount]);
+      if (
+        !isConnected ||
+        !address ||
+        !isCorrectNetwork ||
+        vaultData.asset === "Unknown"
+      ) {
+        setError(vaultData.asset === "Unknown" ? "Vault not found" : null);
+        setIsLoading(false);
+        return;
+      }
 
-    const handleConnectDoge = () => {
-        setTimeout(() => {
-            setDogeWalletConnected(true);
-            if (window.crypto && window.crypto.randomUUID) {
-              setDogeAddress(`D...${window.crypto.randomUUID().slice(-12)}`);
-            } else {
-              setDogeAddress(`D...${(Math.random().toString(36) + '00000000000000000').slice(2, 14)}`);
-            }
-        }, 1000);
+      setIsLoading(true);
+      try {
+        const [
+          whitelisted,
+          mintable,
+          allowanceAmt,
+          mintedAmt,
+          curBal,
+          totalSupply,
+        ] = await Promise.all([
+          readContract(config, {
+            address: vaultData.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "isWhitelisted",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vaultData.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "getMintableAmount",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vaultData.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "getAllowance",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vaultData.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "getMintedAmount",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vaultData.assetAddress as `0x${string}`,
+            abi: assetAbi,
+            functionName: "balanceOf",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vaultData.assetAddress as `0x${string}`,
+            abi: assetAbi,
+            functionName: "totalSupply",
+          }),
+        ]);
+
+        if (!mounted) return;
+        setIsWhitelisted(whitelisted as boolean);
+        setMintableAmount(mintable as bigint);
+        setAllowance(allowanceAmt as bigint);
+        setMintedAmount(mintedAmt as bigint);
+        setCurrentAssetBalance(curBal as bigint);
+        setError(null);
+      } catch (err) {
+        console.error("Data fetch error:", err);
+        if (!mounted) return;
+        setError("Could not fetch vault data");
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
     };
 
-    const handleConnectEvm = () => {
-        setTimeout(() => {
-            setEvmWalletConnected(true);
-            if (window.crypto && window.crypto.randomUUID) {
-              setEvmAddress(`0x...${window.crypto.randomUUID().slice(-12)}`);
-            } else {
-              setEvmAddress(`0x...${(Math.random().toString(36) + '00000000000000000').slice(2, 14)}`);
-            }
-        }, 1000);
+    initialize();
+
+    return () => {
+      mounted = false;
     };
+  }, [params, isConnected, address, isCorrectNetwork]);
 
-    const handleSign = () => {
-        if (!canSign) return;
-        setIsProcessing(true);
-        setProcessingStep('signing');
-        setShowModal(true);
-        setModalContent({ title: 'Signing Locking Period', description: 'Please sign the transaction in your DOGE wallet...', isSuccess: false });
-
-        setTimeout(() => {
-            setIsPeriodSigned(true);
-            setIsProcessing(false);
-            setProcessingStep('');
-            setModalContent({ title: 'Signature Successful', description: 'You have successfully signed the locking period. You can now proceed to mint your t-DOGE.', isSuccess: true });
-        }, 2000);
+  /**
+   * Handles minting of a vault asset by calling the `mint` function on the
+   * asset management contract. Checks for valid input, correct network, and
+   * user whitelisting before submitting the transaction. Displays a modal with
+   * transaction status and updates the page state after the transaction is
+   * confirmed.
+   */
+  const handleMint = async () => {
+    if (!isConnected || !address || !isCorrectNetwork || !vault) {
+      toast({
+        title: "Error",
+        description: "Connect wallet and switch to Sepolia",
+        variant: "destructive",
+      });
+      return;
     }
-    
-    const handleMint = () => {
-        if (!canMint) return;
-        setIsProcessing(true);
-        setProcessingStep('minting');
-        setShowModal(true);
-        setModalContent({ title: 'Minting t-DOGE', description: 'Confirming the transaction on the EVM chain...', isSuccess: false });
-
-        setTimeout(() => {
-            setIsProcessing(false);
-            setProcessingStep('');
-            setModalContent({ title: 'Minting Successful!', description: `You have successfully deposited ${dogeAmount} ${vault.asset} and received ${tDogeAmount} t-DOGE.`, isSuccess: true });
-        }, 3000);
+    if (!amount || parseFloat(amount) <= 0) {
+      toast({
+        title: "Invalid",
+        description: "Enter a valid amount",
+        variant: "destructive",
+      });
+      return;
     }
 
-    const closeModal = () => {
-        if (modalContent.title === 'Minting Successful!') {
-            setShowModal(false);
-            setDogeAmount('');
-            setLockingPeriod(3);
-            setIsPeriodSigned(false);
-        } else {
-            setShowModal(false);
-        }
+    if (!isCorrectNetwork) {
+      toast({
+        title: "Wrong Network",
+        description: "Switch to Sepolia",
+        variant: "destructive",
+      });
+      return;
     }
 
-    const canSign = dogeWalletConnected && evmWalletConnected && parseFloat(dogeAmount) > 0 && lockingPeriod !== 0 && !isPeriodSigned && !isProcessing;
-    const canMint = isPeriodSigned && !isProcessing;
+    setIsProcessing(true);
+    setShowModal(true);
+    setModalContent({
+      title: "Preparing Transaction",
+      description: "Please confirm in your wallet...",
+      isSuccess: false,
+      txHash: undefined,
+    });
 
-    return (
-        <div className="max-w-2xl mx-auto p-4 md:p-8 animate-fade-in">
-            <Link href="/vault" className="text-muted-foreground hover:text-foreground mb-6 flex items-center gap-2">
-                &larr; Back to Vaults
-            </Link>
-            <div className="bg-background/70 border border-border rounded-2xl p-6 shadow-xl">
-                <h2 className="text-2xl font-bold text-foreground mb-1">Deposit {vault.asset}</h2>
-                <p className="text-muted-foreground mb-6">You will receive t-DOGE, a tokenized version of your deposit.</p>
+    try {
+      const amountBigInt = parseUnits(amount, 18);
+      if (amountBigInt > mintableAmount) {
+        throw new Error(
+          `Amount exceeds mintable limit of ${formatUnits(
+            mintableAmount,
+            18
+          )} ${vault.asset}`
+        );
+      }
 
-                <div className="space-y-4">
-                    <div>
-                        <Label className="text-sm font-medium text-muted-foreground block mb-2">Amount to lock</Label>
-                        <div className="relative">
-                            <input
-                                type="number"
-                                placeholder="0.00"
-                                value={dogeAmount}
-                                onChange={(e) => setDogeAmount(e.target.value)}
-                                disabled={isPeriodSigned}
-                                className="w-full bg-secondary border border-border rounded-lg p-3 text-foreground text-xl focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none disabled:bg-muted disabled:cursor-not-allowed"
-                            />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">{vault.asset}</span>
-                        </div>
-                    </div>
+      const hash = await writeContractAsync({
+        address: vault.contractAddress as `0x${string}`,
+        abi: assetManagementAbi,
+        functionName: "mint",
+        args: [amountBigInt],
+      });
 
-                    <div className="space-y-4 pt-2">
-                        <Label htmlFor="locking-period" className="text-sm font-medium text-muted-foreground">Locking Period: <span className="font-bold text-primary">{lockingPeriod} Months</span></Label>
-                        <Slider
-                          id="locking-period"
-                          min={3}
-                          max={9}
-                          step={3}
-                          value={[lockingPeriod]}
-                          onValueChange={(value) => setLockingPeriod(value[0])}
-                          disabled={isPeriodSigned}
-                          className="disabled:cursor-not-allowed"
-                        />
-                      </div>
+      setModalContent({
+        title: "Transaction Submitted",
+        description: "Waiting for confirmation...",
+        isSuccess: false,
+        txHash: hash,
+      });
 
-                    <div>
-                        <Label className="text-sm font-medium text-muted-foreground block mb-2">Amount you will receive</Label>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                readOnly
-                                value={tDogeAmount}
-                                placeholder="0.00"
-                                className="w-full bg-background border border-border rounded-lg p-3 text-foreground text-xl"
-                            />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">t-DOGE</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground/80 mt-1 text-center">1 {vault.asset} = 1 t-DOGE</p>
-                    </div>
-                </div>
+      await waitForTransactionReceipt(config, { hash });
 
-                <div className="my-6 space-y-3">
-                    <WalletConnectButton walletName="DOGE Wallet" onConnect={handleConnectDoge} isConnected={dogeWalletConnected} address={dogeAddress} />
-                    <WalletConnectButton walletName="EVM Wallet" onConnect={handleConnectEvm} isConnected={evmWalletConnected} address={evmAddress} />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                    <button
-                        onClick={handleSign}
-                        disabled={!canSign}
-                        className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-lg hover:bg-primary/90 transition-all disabled:bg-muted disabled:cursor-not-allowed disabled:text-muted-foreground"
-                    >
-                         {processingStep === 'signing' ? 'Signing...' : isPeriodSigned ? 'Signed' : '1. Sign & Lock'}
-                    </button>
-                    <button
-                        onClick={handleMint}
-                        disabled={!canMint}
-                        className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-lg hover:bg-primary/90 transition-all disabled:bg-muted disabled:cursor-not-allowed disabled:text-muted-foreground"
-                    >
-                        {processingStep === 'minting' ? 'Minting...' : '2. Mint t-DOGE'}
-                    </button>
-                </div>
+      toast({
+        title: "Success",
+        description: `Minted ${amount} ${vault.asset}`,
+      });
 
-            </div>
-            <AlertDialog open={showModal} onOpenChange={setShowModal}>
-              <AlertDialogContent className="bg-background border-border rounded-2xl shadow-2xl p-6 w-full max-w-md">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-center text-2xl font-bold text-foreground mb-4">
-                     {modalContent.title}
-                  </AlertDialogTitle>
-                   <AlertDialogDescription asChild>
-                     <div className="text-center text-muted-foreground">
-                       <div className="flex justify-center items-center my-8">
-                         {!modalContent.isSuccess ? (
-                           <span className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
-                         ) : (
-                            <span className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
-                              {modalContent.title.includes('Minting') ? <Zap size={32} className="text-green-400" /> : <CheckCircle2 size={32} className="text-green-400" />}
-                            </span>
-                         )}
-                       </div>
-                       <span>
-                          {modalContent.description}
-                       </span>
-                     </div>
-                   </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  {modalContent.isSuccess && (
-                      <AlertDialogAction onClick={closeModal} className="w-full bg-primary text-primary-foreground font-semibold py-2 px-6 rounded-lg hover:bg-primary/90">
-                          Done
-                      </AlertDialogAction>
+      setModalContent({
+        title: "Mint Successful!",
+        description: `Successfully minted ${amount} ${vault.asset}`,
+        isSuccess: true,
+        txHash: hash,
+      });
+      setAmount("");
+
+      // Refresh state
+      if (!address || !isCorrectNetwork) return;
+      try {
+        const [mintable, minted, balance] = await Promise.all([
+          readContract(config, {
+            address: vault.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "getMintableAmount",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vault.contractAddress as `0x${string}`,
+            abi: assetManagementAbi,
+            functionName: "getMintedAmount",
+            args: [address],
+          }),
+          readContract(config, {
+            address: vault.assetAddress as `0x${string}`,
+            abi: assetAbi,
+            functionName: "balanceOf",
+            args: [address],
+          }),
+        ]);
+        setMintableAmount(mintable as bigint);
+        setMintedAmount(minted as bigint);
+        setCurrentAssetBalance(balance as bigint);
+      } catch (err) {
+        console.error("Refresh state error:", err);
+      }
+    } catch (err: any) {
+      console.error("Mint error:", err);
+      const message = err?.message?.includes("user rejected")
+        ? "Transaction cancelled"
+        : err?.message || "Mint failed";
+      setModalContent({
+        title: "Failed",
+        description: message,
+        isSuccess: false,
+        txHash: undefined,
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const usagePercentage =
+    allowance > BigInt(0)
+      ? (Number(formatUnits(mintedAmount, 18)) /
+          Number(formatUnits(allowance, 18))) *
+        100
+      : 0;
+
+  return (
+    <div className="container mx-auto p-4 max-w-4xl">
+      <Button asChild variant="outline" className="mb-6 bg-transparent">
+        <Link href="/vault">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Vaults
+        </Link>
+      </Button>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Mint Card */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-4">
+                <div
+                  className={cn(
+                    "w-12 h-12 bg-gradient-to-br text-white rounded-full flex items-center justify-center text-xl font-bold",
+                    vault?.color
                   )}
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                >
+                  {vault?.icon}
+                </div>
+                <div>
+                  <CardTitle className="text-2xl">
+                    Mint {vault?.asset}
+                  </CardTitle>
+                  <CardDescription>{vault?.description}</CardDescription>
+                </div>
+                <Badge variant="default" className="ml-auto">
+                  Sepolia Testnet
+                </Badge>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              <div>
+                <Label htmlFor="amount" className="text-base font-medium">
+                  Amount to Mint
+                </Label>
+                <div className="relative mt-2">
+                  <Input
+                    id="amount"
+                    type="number"
+                    placeholder="0.0"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="text-lg h-12 pr-20"
+                    disabled={isLoading || isProcessing}
+                    step="0.01"
+                    min="0"
+                    max={formatUnits(mintableAmount, 18)}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <span className="text-muted-foreground font-medium">
+                      {vault?.asset}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+                  <span>
+                    Available:{" "}
+                    {Number(formatUnits(mintableAmount, 18)).toFixed(4)}{" "}
+                    {vault?.asset}
+                  </span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0"
+                    onClick={() => setAmount(formatUnits(mintableAmount, 18))}
+                    disabled={
+                      isLoading || isProcessing || mintableAmount === BigInt(0)
+                    }
+                  >
+                    Max
+                  </Button>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleMint}
+                disabled={
+                  !amount ||
+                  Number.parseFloat(amount) <= 0 ||
+                  Number.parseFloat(amount) >
+                    Number(formatUnits(mintableAmount, 18)) ||
+                  isProcessing ||
+                  isLoading ||
+                  !isWhitelisted
+                }
+                className="w-full h-12 text-base"
+                size="lg"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  `Mint ${vault?.asset}`
+                )}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
-    );
+
+        {/* Stats Sidebar */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Your Stats</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isLoading ? (
+                <div className="space-y-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-3 bg-muted rounded animate-pulse" />
+                      <div className="h-4 bg-muted rounded animate-pulse w-2/3" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <div className="text-sm text-muted-foreground">
+                      Current Balance
+                    </div>
+                    <div className="text-lg font-semibold">
+                      {Number(formatUnits(currentAssetBalance, 18)).toFixed(4)}{" "}
+                      {vault?.asset}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-muted-foreground">
+                      Mintable Amount
+                    </div>
+                    <div className="text-lg font-semibold">
+                      {Number(formatUnits(mintableAmount, 18)).toFixed(4)}{" "}
+                      {vault?.asset}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-sm text-muted-foreground">
+                      Total Allowance
+                    </div>
+                    <div className="text-lg font-semibold">
+                      {Number(formatUnits(allowance, 18)).toFixed(4)}{" "}
+                      {vault?.asset}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Usage</span>
+                      <span className="font-medium">
+                        {usagePercentage.toFixed(1)}%
+                      </span>
+                    </div>
+                    <Progress value={usagePercentage} className="h-2" />
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {Number(formatUnits(mintedAmount, 18)).toFixed(4)} /{" "}
+                      {Number(formatUnits(allowance, 18)).toFixed(4)} used
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Vault Info</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Asset</span>
+                <span className="font-medium">{vault?.asset}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Status</span>
+                <Badge variant="default">
+                  {isWhitelisted ? "Active" : "Restricted"}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Network</span>
+                <span className="font-medium">Sepolia Testnet</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Contract</span>
+                <span className="font-mono text-xs">
+                  {vault?.contractAddress.slice(0, 6)}...
+                  {vault?.contractAddress.slice(-4)}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <AlertDialog open={showModal} onOpenChange={setShowModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{modalContent.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="flex flex-col items-center mt-4 gap-3 max-w-full">
+                {!modalContent.isSuccess ? (
+                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                ) : (
+                  <CheckCircle2 size={40} className="text-green-500" />
+                )}
+                <span className="text-center break-words overflow-hidden">
+                  {modalContent.description}
+                </span>
+                {modalContent.isSuccess && modalContent.txHash && (
+                  <Button asChild variant="outline" size="sm">
+                    <a
+                      href={`${explorerUrl}/tx/${modalContent.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2"
+                    >
+                      View on Etherscan <ExternalLink size={14} />
+                    </a>
+                  </Button>
+                )}
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {modalContent.isSuccess && (
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setShowModal(false)}>
+                Close
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }
