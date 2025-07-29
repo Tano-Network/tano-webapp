@@ -51,10 +51,16 @@ function AppHeader() {
 
   const navLinks = [
     {
+      href: "/mint",
+      label: "Mint",
+      icon: ArrowRight,
+      badge: "Retail",
+    },
+    {
       href: "/vault",
       label: "Vault",
       icon: Wallet,
-      badge: "New",
+      badge: null,
     },
     {
       href: "/earn",
@@ -62,6 +68,7 @@ function AppHeader() {
       icon: TrendingUp,
       badge: null,
     },
+    
   ];
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);

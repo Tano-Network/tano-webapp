@@ -30,3 +30,36 @@ export const EXPLORER_URLS = {
   [SUPPORTED_CHAINS.ARBITRUM]: "https://arbiscan.io",
   [SUPPORTED_CHAINS.BASE]: "https://basescan.org",
 } as const;
+
+export const VAULTS = [
+  {
+    id: "tdoge",
+    name: "tDOGE Vault",
+    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_TOKEN,
+    assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_ASSET_MANAGEMENT,
+    nativeChainName: "dogecoin",
+    nativeAddress: "npyjkNHtqeCqRf3o1wairchdZEuyw8exj5", // Dogecoin testnet address format
+    icon: "🐕", // Dogecoin emoji
+    explorerUrl: "https://sochain.com/tx/DOGETEST",
+  },
+  {
+    id: "tltc",
+    name: "tLTC Vault",
+    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN,
+    assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT,
+    nativeChainName: "Litecoin Testnet",
+    nativeAddress: "tltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080", // Litecoin testnet address format
+    icon: "₿", // Litecoin-like symbol
+    explorerUrl: "https://sochain.com/testnet/ltc",
+  },
+  {
+    id: "tbch",
+    name: "tBCH Vault",
+    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
+    assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT,
+    nativeChainName: "Bitcoin Cash Testnet",
+    nativeAddress: "bchtest:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2", // Bitcoin Cash testnet address format
+    icon: "💰", // Bitcoin Cash-like symbol
+    explorerUrl: "https://www.blocktrail.com/tBCC",
+  },
+]
