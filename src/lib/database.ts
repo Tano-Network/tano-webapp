@@ -25,10 +25,10 @@ export interface MintRequest {
 const dbName = 'tano';
 
 const connectionConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '1234',
-  multipleStatements: true,
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  multipleStatements: process.env.DB_MULTIPLE_STATEMENTS === 'true',
 };
 
 const pool = mysql.createPool({
