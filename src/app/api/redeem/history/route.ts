@@ -7,7 +7,7 @@ export async function GET(req: Request) {
     const address = searchParams.get("address")
     const vaultId = searchParams.get("vaultId")
 
-    console.log("Mint Requests API: Fetching requests for address:", address, "vaultId:", vaultId)
+    console.log("Redeem History API: Fetching history for address:", address, "vaultId:", vaultId)
 
     if (!address) {
       return NextResponse.json({ message: "Address parameter is required", status: "error" }, { status: 400 })
@@ -15,25 +15,31 @@ export async function GET(req: Request) {
 
     await initDB()
 
-    let requests = await DatabaseService.getMintRequestsByEvmAddress(address)
-
-    // Filter by vaultId if provided
+    // Map vaultId to asset
+    let asset: string | undefined
     if (vaultId) {
-      requests = requests.filter((request) => request.vaultId === vaultId)
+      const assetMap: Record<string, string> = {
+        tdoge: "DOGE",
+        tltc: "LTC",
+        tbch: "BCH",
+      }
+      asset = assetMap[vaultId.toLowerCase()]
     }
 
-    console.log(`Mint Requests API: Found ${requests.length} requests`)
+    const requests = await DatabaseService.getRedeemRequestsByAddress(address, vaultId as string | undefined)
+
+    console.log(`Redeem History API: Found ${requests.length} historical requests`)
 
     return NextResponse.json({
-      requests,
+      history: requests,
       status: "success",
       count: requests.length,
     })
   } catch (error: any) {
-    console.error("Mint Requests API: Error fetching requests:", error)
+    console.error("Redeem History API: Error fetching history:", error)
     return NextResponse.json(
       {
-        message: "Failed to fetch mint requests",
+        message: "Failed to fetch redeem history",
         status: "error",
         error: error.message,
       },

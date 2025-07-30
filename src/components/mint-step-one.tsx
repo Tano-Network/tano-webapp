@@ -11,6 +11,7 @@ import { VAULTS } from "@/lib/constants"
 import { useToast } from "@/hooks/use-toast"
 import { formatAddress } from "@/lib/web3"
 import type { MintFormData } from "@/app/(app)/mint/page"
+import Image from "next/image"
 
 interface MintStepOneProps {
   onComplete: (data: MintFormData) => void
@@ -76,7 +77,7 @@ export function MintStepOne({ onComplete }: MintStepOneProps) {
             {VAULTS.map((vault) => (
               <SelectItem key={vault.id} value={vault.id}>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{vault.icon}</span>
+                  <span className="text-lg"><img src={vault.icon} alt={vault.name} width={20} height={20} /></span>
                   {vault.name}
                 </div>
               </SelectItem>

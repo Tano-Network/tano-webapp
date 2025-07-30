@@ -35,31 +35,43 @@ export const VAULTS = [
   {
     id: "tdoge",
     name: "tDOGE Vault",
+    asset: "tDOGE",
     tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_TOKEN,
     assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_ASSET_MANAGEMENT,
     nativeChainName: "dogecoin",
-    nativeAddress: "npyjkNHtqeCqRf3o1wairchdZEuyw8exj5", // Dogecoin testnet address format
-    icon: "🐕", // Dogecoin emoji
+    nativeAddress: "npyjkNHtqeCqRf3o1wairchdZEuyw8exj5",
+    icon: "https://assets.coingecko.com/coins/images/5/thumb/dogecoin.png",
+     color: "from-yellow-500 to-orange-500",
+    description: "Redeem DOGE from your tDOGE balance on the Dogecoin testnet.",
+    coinGeckoId: "dogecoin",
     explorerUrl: "https://sochain.com/tx/DOGETEST",
   },
   {
     id: "tltc",
     name: "tLTC Vault",
+    asset: "tLTC",
     tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN,
     assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT,
     nativeChainName: "Litecoin Testnet",
-    nativeAddress: "tltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080", // Litecoin testnet address format
-    icon: "₿", // Litecoin-like symbol
+    nativeAddress: "tltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080",
+    icon: "https://assets.coingecko.com/coins/images/2/thumb/litecoin.png",
+    color: "from-gray-400 to-gray-600",
+    description: "Redeem Litecoin from your tLTC balance on the Litecoin testnet.",
+    coinGeckoId: "litecoin",
     explorerUrl: "https://sochain.com/testnet/ltc",
   },
   {
     id: "tbch",
     name: "tBCH Vault",
+    asset: "tBCH",
     tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
     assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT,
     nativeChainName: "Bitcoin Cash Testnet",
-    nativeAddress: "bchtest:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2", // Bitcoin Cash testnet address format
-    icon: "💰", // Bitcoin Cash-like symbol
+    nativeAddress: "bchtest:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2",
+    icon: "https://assets.coingecko.com/coins/images/780/thumb/bitcoin-cash-circle.png",
+    color: "bg-green-500",
+    description: "Redeem BCH from your tBCH balance on the Bitcoin Cash testnet.",
+    coinGeckoId: "bitcoin-cash",
     explorerUrl: "https://www.blocktrail.com/tBCC",
   },
-]
+];

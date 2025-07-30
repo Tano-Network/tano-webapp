@@ -4,7 +4,7 @@ import type React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X, Menu, Wallet, TrendingUp, ArrowRight } from "lucide-react";
+import { X, Menu, Wallet, TrendingUp, ArrowRight, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RainbowConnectButton } from "@/components/RainbowConnectButton";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -66,6 +66,12 @@ function AppHeader() {
       href: "/earn",
       label: "Earn",
       icon: TrendingUp,
+      badge: null,
+    },
+    {
+      href: "/redeem",
+      label: "Redeem",
+      icon: TrendingDown,
       badge: null,
     },
     
