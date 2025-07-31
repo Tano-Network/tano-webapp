@@ -191,26 +191,16 @@ export default function MintDashboard() {
               {isUserTable ? "Your mint requests - highlighted for easy tracking" : "All mint requests in the system"}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchRequests}
-              disabled={isLoading}
-              className="flex items-center gap-2 bg-transparent"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-            {isUserTable && (
-              <Link href="/mint/new">
-                <Button size="sm" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Submit Mint Request
-                </Button>
-              </Link>
-            )}
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchRequests}
+            disabled={isLoading}
+            className="flex items-center gap-2 bg-transparent"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -234,10 +224,10 @@ export default function MintDashboard() {
               {isUserTable ? "You haven't submitted any mint requests yet." : "No mint requests found in the system."}
             </p>
             {isUserTable && (
-              <Link href="/mint/new">
+              <Link href="/mint">
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Submit Mint Request
+                  Create Mint Request
                 </Button>
               </Link>
             )}
@@ -395,10 +385,10 @@ export default function MintDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Link href="/mint/new">
+                          <Link href="/mint">
                             <Button variant="outline" size="sm" className="text-xs bg-transparent">
                               <Plus className="h-3 w-3 mr-1" />
-                              New
+                              Mint
                             </Button>
                           </Link>
                         </div>
@@ -420,14 +410,6 @@ export default function MintDashboard() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold">Mint Dashboard</h1>
           <p className="text-muted-foreground mt-2">View and manage all mint requests in the system</p>
-          <div className="mt-4">
-            <Link href="/mint/new">
-              <Button size="lg" className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Submit New Mint Request
-              </Button>
-            </Link>
-          </div>
         </div>
 
         <div className="space-y-8">
