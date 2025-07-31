@@ -1104,7 +1104,7 @@ export default function EarnPoolPage({
                 {modalContent.isSuccess && modalContent.txHash && (
                   <Button asChild variant="outline" size="sm">
                     <a
-                      href={`${explorerUrl}/tx/${modalContent.txHash}`}
+                      href={`${explorerUrl}/${modalContent.txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2"

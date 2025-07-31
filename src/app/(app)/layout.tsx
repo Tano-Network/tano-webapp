@@ -4,7 +4,7 @@ import type React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X, Menu, Wallet, TrendingUp, ArrowRight } from "lucide-react";
+import { X, Menu, Wallet, TrendingUp, ArrowRight, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RainbowConnectButton } from "@/components/RainbowConnectButton";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -51,10 +51,16 @@ function AppHeader() {
 
   const navLinks = [
     {
+      href: "/mint",
+      label: "Mint",
+      icon: ArrowRight,
+      badge: "Retail",
+    },
+    {
       href: "/vault",
       label: "Vault",
       icon: Wallet,
-      badge: "New",
+      badge: null,
     },
     {
       href: "/earn",
@@ -62,6 +68,13 @@ function AppHeader() {
       icon: TrendingUp,
       badge: null,
     },
+    {
+      href: "/redeem",
+      label: "Redeem",
+      icon: TrendingDown,
+      badge: null,
+    },
+    
   ];
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
