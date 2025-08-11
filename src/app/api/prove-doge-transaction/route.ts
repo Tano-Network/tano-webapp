@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     )
 
     const data = await upstream.json().catch(() => ({}))
+    console.log("Upstream response:", data)
 
     if (!upstream.ok) {
       return NextResponse.json(
