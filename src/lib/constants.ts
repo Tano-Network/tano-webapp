@@ -41,7 +41,7 @@ export const VAULTS = [
     tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_TOKEN,
     assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_ASSET_MANAGEMENT,
     nativeChainName: "dogecoin",
-    nativeAddress: "npyjkNHtqeCqRf3o1wairchdZEuyw8exj5",
+    nativeAddress: "DUSUKMHowSXK13YixvC12AyqXr5tRUdK6e",
     icon: "https://assets.coingecko.com/coins/images/5/thumb/dogecoin.png",
     color: "from-yellow-500 to-orange-500",
     description: "Redeem DOGE from your tDOGE balance on the Dogecoin testnet.",

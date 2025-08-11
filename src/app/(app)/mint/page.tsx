@@ -24,6 +24,10 @@ import {
 import { VAULTS } from "@/lib/constants"
 import Link from "next/link"
 
+// ⬇ Added imports for dialog & scroll area
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
+
 interface MintRequest {
   id: string
   evmAddress: string
@@ -52,18 +56,20 @@ export default function MintDashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
 
+  // ⬇ Proof dialog state
+  const [selectedProof, setSelectedProof] = useState<any | null>(null)
+  const [isProofDialogOpen, setIsProofDialogOpen] = useState(false)
+
   const fetchRequests = async () => {
     try {
       setIsLoading(true)
 
-      // Fetch all requests
       const allResponse = await fetch("/api/mint-requests")
       if (allResponse.ok) {
         const allData = await allResponse.json()
         setAllRequests(allData.requests || [])
       }
 
-      // Fetch user requests if connected
       if (address && isConnected) {
         const userResponse = await fetch(`/api/mint-requests?address=${address}`)
         if (userResponse.ok) {
@@ -121,9 +127,7 @@ export default function MintDashboard() {
     }
   }
 
-  const getVaultInfo = (vaultId: string) => {
-    return VAULTS.find((vault) => vault.id === vaultId)
-  }
+  const getVaultInfo = (vaultId: string) => VAULTS.find((vault) => vault.id === vaultId)
 
   const getVaultIcon = (vaultId: string) => {
     switch (vaultId.toLowerCase()) {
@@ -157,27 +161,11 @@ export default function MintDashboard() {
     }
   }
 
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
-  }
+  const formatAddress = (address: string) => `${address.slice(0, 6)}...${address.slice(-4)}`
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString()
+  const formatDateTime = (dateString: string) => new Date(dateString).toLocaleString()
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
-  }
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
-  }
-
-  const MintRequestTable = ({
-    requests,
-    title,
-    isUserTable = false,
-  }: {
-    requests: MintRequest[]
-    title: string
-    isUserTable?: boolean
-  }) => (
+  const MintRequestTable = ({ requests, title, isUserTable = false }: { requests: MintRequest[], title: string, isUserTable?: boolean }) => (
     <Card className={isUserTable ? "border-2 border-blue-200 bg-blue-50/30" : ""}>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -192,13 +180,7 @@ export default function MintDashboard() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchRequests}
-              disabled={isLoading}
-              className="flex items-center gap-2 bg-transparent"
-            >
+            <Button variant="outline" size="sm" onClick={fetchRequests} disabled={isLoading} className="flex items-center gap-2 bg-transparent">
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
@@ -247,21 +229,21 @@ export default function MintDashboard() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[100px]">Vault</TableHead>
-                  <TableHead className="min-w-[120px]">Amount</TableHead>
-                  <TableHead className="min-w-[100px]">Status</TableHead>
-                  <TableHead className="min-w-[140px]">EVM Address</TableHead>
-                  <TableHead className="min-w-[140px]">Native Address</TableHead>
-                  <TableHead className="min-w-[120px]">Chain</TableHead>
-                  <TableHead className="min-w-[160px]">Transaction Hash</TableHead>
-                  <TableHead className="min-w-[120px]">UTXO</TableHead>
-                  <TableHead className="min-w-[120px]">Admin Approval</TableHead>
-                  <TableHead className="min-w-[100px]">Request Type</TableHead>
-                  <TableHead className="min-w-[120px]">Created</TableHead>
-                  <TableHead className="min-w-[120px]">Updated</TableHead>
-                  <TableHead className="min-w-[100px]">Proof</TableHead>
-                  <TableHead className="min-w-[120px]">Mint Tx</TableHead>
-                  <TableHead className="min-w-[100px]">Actions</TableHead>
+                  <TableHead>Vault</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>EVM Address</TableHead>
+                  <TableHead>Native Address</TableHead>
+                  <TableHead>Chain</TableHead>
+                  <TableHead>Transaction Hash</TableHead>
+                  <TableHead>UTXO</TableHead>
+                  <TableHead>Admin Approval</TableHead>
+                  <TableHead>Request Type</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead>Proof</TableHead>
+                  <TableHead>Mint Tx</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -269,61 +251,60 @@ export default function MintDashboard() {
                   const vault = getVaultInfo(request.vaultId)
                   return (
                     <TableRow key={request.id} className={isUserTable ? "bg-blue-50/50" : ""}>
+                      {/* Vault */}
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div
-                            className={`bg-gradient-to-br ${getVaultIconColor(request.vaultId)} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg`}
-                          >
+                          <div className={`bg-gradient-to-br ${getVaultIconColor(request.vaultId)} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg`}>
                             {getVaultIcon(request.vaultId)}
                           </div>
                           <div>
-                            <div className="font-medium">{vault?.name || `${request.vaultId.toUpperCase()}`}</div>
+                            <div className="font-medium">{vault?.name || request.vaultId.toUpperCase()}</div>
                             <div className="text-xs text-muted-foreground">{request.vaultChain}</div>
                           </div>
                         </div>
                       </TableCell>
+                      {/* Amount */}
                       <TableCell>
                         <div className="font-mono">{request.amount}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {vault?.nativeChainName || request.vaultChain}
-                        </div>
+                        <div className="text-xs text-muted-foreground">{vault?.nativeChainName || request.vaultChain}</div>
                       </TableCell>
+                      {/* Status */}
                       <TableCell>
                         <Badge className={`${getStatusColor(request.status)} flex items-center gap-1 w-fit`}>
                           {getStatusIcon(request.status)}
                           {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                         </Badge>
                       </TableCell>
+                      {/* EVM Address */}
                       <TableCell>
                         <div className="font-mono text-xs">{formatAddress(request.evmAddress)}</div>
                         <div className="text-xs text-muted-foreground">{request.evmChain}</div>
                       </TableCell>
+                      {/* Native Address */}
                       <TableCell>
                         <div className="font-mono text-xs">{formatAddress(request.userVaultChainAddress)}</div>
                       </TableCell>
+                      {/* Chain */}
                       <TableCell>
                         <div className="capitalize">{request.evmChain}</div>
                         <div className="text-xs text-muted-foreground">ID: {request.evmChainId}</div>
                       </TableCell>
+                      {/* Tx Hash */}
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="font-mono text-xs">{formatAddress(request.transactionHash)}</div>
                           {vault?.explorerUrl && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                window.open(`${vault.explorerUrl}/tx/${request.transactionHash}`, "_blank")
-                              }
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => window.open(`${vault.explorerUrl}/tx/${request.transactionHash}`, "_blank")}>
                               <ExternalLink className="h-3 w-3" />
                             </Button>
                           )}
                         </div>
                       </TableCell>
+                      {/* UTXO */}
                       <TableCell>
                         <div className="font-mono text-xs">{formatAddress(request.utxo)}</div>
                       </TableCell>
+                      {/* Approval */}
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {request.whitelisted ? (
@@ -339,23 +320,21 @@ export default function MintDashboard() {
                           )}
                         </div>
                       </TableCell>
+                      {/* Request Type */}
                       <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          Retail
-                        </Badge>
+                        <Badge variant="outline" className="text-xs">Retail</Badge>
                       </TableCell>
+                      {/* Created */}
                       <TableCell>
                         <div className="text-xs">{formatDate(request.createdAt)}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatDateTime(request.createdAt).split(" ")[1]}
-                        </div>
+                        <div className="text-xs text-muted-foreground">{formatDateTime(request.createdAt).split(" ")[1]}</div>
                       </TableCell>
+                      {/* Updated */}
                       <TableCell>
                         <div className="text-xs">{formatDate(request.updatedAt)}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatDateTime(request.updatedAt).split(" ")[1]}
-                        </div>
+                        <div className="text-xs text-muted-foreground">{formatDateTime(request.updatedAt).split(" ")[1]}</div>
                       </TableCell>
+                      {/* Proof */}
                       <TableCell>
                         {request.proof ? (
                           <div className="flex items-center gap-2">
@@ -364,9 +343,15 @@ export default function MintDashboard() {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                // For now, keep it empty as requested
+                                try {
+                                  const parsed = JSON.parse(request.proof)
+                                  setSelectedProof(parsed)
+                                  setIsProofDialogOpen(true)
+                                } catch {
+                                  setSelectedProof({ error: "Invalid proof format" })
+                                  setIsProofDialogOpen(true)
+                                }
                               }}
-                              disabled
                               className="text-xs"
                             >
                               View
@@ -376,14 +361,10 @@ export default function MintDashboard() {
                           <span className="text-xs text-muted-foreground">No proof</span>
                         )}
                       </TableCell>
+                      {/* Mint Tx */}
                       <TableCell>
                         {request.mintTxLink ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(request.mintTxLink, "_blank")}
-                            className="text-xs"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => window.open(request.mintTxLink, "_blank")} className="text-xs">
                             <ExternalLink className="h-3 w-3 mr-1" />
                             View
                           </Button>
@@ -393,6 +374,7 @@ export default function MintDashboard() {
                           </span>
                         )}
                       </TableCell>
+                      {/* Actions */}
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Link href="/mint/new">
@@ -431,15 +413,39 @@ export default function MintDashboard() {
         </div>
 
         <div className="space-y-8">
-          {/* User Requests Table (if connected) */}
           {isConnected && address && (
             <MintRequestTable requests={userRequests} title="Your Mint Requests" isUserTable={true} />
           )}
-
-          {/* All Requests Table */}
           <MintRequestTable requests={allRequests} title="All Mint Requests" isUserTable={false} />
         </div>
       </div>
+
+      {/* Proof Dialog */}
+      <Dialog open={isProofDialogOpen} onOpenChange={setIsProofDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Proof Details</DialogTitle>
+            <DialogDescription>
+              {selectedProof ? "Below is the proof data for this request:" : "No proof data"}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] mt-4 p-2 border rounded">
+            <pre className="text-xs whitespace-pre-wrap break-words">
+              {selectedProof ? JSON.stringify(selectedProof, null, 2) : "N/A"}
+            </pre>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   )
+}
+
+export interface MintFormData {
+  evmAddress: string
+  evmChain: string
+  evmChainId: number
+  vaultId: string
+  vaultName: string
+  vaultChain: string | undefined
+  userVaultChainAddress: string
 }
