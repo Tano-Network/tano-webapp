@@ -37,13 +37,13 @@ export interface RedeemRequest {
   status: "pending" | "processing" | "completed" | "failed"
 }
 
-const dbName = process.env.DB_NAME || 'bima-mainnet';
+const dbName = process.env.DB_NAME || 'tano';
 
 const connectionConfig = {
   host: process.env.DB_HOST || "localhost",
-  port: 25060,
-  user: process.env.DB_USER || "doadmin",
-  password: process.env.DB_PASSWORD || "",
+  port: 3306,
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "1234",
   multipleStatements: process.env.DB_MULTIPLE_STATEMENTS === "true",
 }
 

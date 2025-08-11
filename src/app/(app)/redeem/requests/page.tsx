@@ -60,19 +60,15 @@ export default function RedeemRequestsPage() {
     fetchRequests()
   }, [address, isConnected])
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "pending":
-        return <Clock className="h-4 w-4" />
-      case "processing":
-        return <RefreshCw className="h-4 w-4 animate-spin" />
-      case "completed":
-        return <CheckCircle className="h-4 w-4" />
-      case "failed":
-        return <XCircle className="h-4 w-4" />
-      default:
-        return <AlertCircle className="h-4 w-4" />
+  const formatAmount = (amount: string) => {
+    if (!amount.includes(".")) {
+      return `${amount}.00`
     }
+    const [intPart, decPart] = amount.split(".")
+    if (/^0+$/.test(decPart)) {
+      return `${intPart}.00`
+    }
+    return amount
   }
 
   const getStatusColor = (status: string) => {
@@ -140,6 +136,16 @@ export default function RedeemRequestsPage() {
       default:
         return `https://blockchair.com/bitcoin/transaction/${txId}`
     }
+  }
+
+  const getPendingLabel = (createdAt: string) => {
+    const createdDate = new Date(createdAt)
+    const now = new Date()
+    const diffMs = new Date(createdDate.getTime() + 7 * 24 * 60 * 60 * 1000).getTime() - now.getTime()
+    const remainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+    return remainingDays > 0
+      ? `${remainingDays} day${remainingDays !== 1 ? "s" : ""} remaining`
+      : "Pending due to technical issue"
   }
 
   if (!isConnected) {
@@ -234,13 +240,16 @@ export default function RedeemRequestsPage() {
                       </div>
                       <div>
                         <div className="text-xl">
-                          {request.amount} {request.asset}
+                          {formatAmount(request.amount)} {request.asset}
                         </div>
-                        <div className="text-sm font-normal text-muted-foreground">Request #{request.id.slice(-8)}</div>
+                        <div className="text-sm font-normal text-muted-foreground">
+                          Request #{request.id.slice(-8)}
+                        </div>
                       </div>
                       <Badge className={`${getStatusColor(request.status)} flex items-center gap-1`}>
-                        {getStatusIcon(request.status)}
-                        {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                        {request.status === "pending"
+                          ? getPendingLabel(request.createdAt)
+                          : request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                       </Badge>
                     </CardTitle>
                   </div>
@@ -250,7 +259,9 @@ export default function RedeemRequestsPage() {
                   </div>
                 </div>
               </CardHeader>
+
               <CardContent className="space-y-4">
+                {/* request details */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="font-medium text-muted-foreground">EVM Address</p>
@@ -300,6 +311,7 @@ export default function RedeemRequestsPage() {
                   )}
                 </div>
 
+                {/* status messages */}
                 {request.status === "completed" && (
                   <div className="pt-4 border-t bg-green-50 p-3 rounded">
                     <div className="flex items-start gap-3">
@@ -328,19 +340,35 @@ export default function RedeemRequestsPage() {
                   </div>
                 )}
 
-                {request.status === "pending" && (
-                  <div className="pt-4 border-t bg-yellow-50 p-3 rounded">
-                    <div className="flex items-start gap-3">
-                      <Clock className="h-5 w-5 text-yellow-600 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-yellow-800">Awaiting Processing</p>
-                        <p className="text-sm text-yellow-700 mt-1">
-                          Your redemption request is pending. Native tokens will be sent within 7 days.
-                        </p>
+                {request.status === "pending" && (() => {
+                  const createdDate = new Date(request.createdAt)
+                  const now = new Date()
+                  const diffMs =
+                    new Date(createdDate.getTime() + 7 * 24 * 60 * 60 * 1000).getTime() - now.getTime()
+                  const remainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+
+                  return (
+                    <div className="pt-4 border-t bg-yellow-50 p-3 rounded">
+                      <div className="flex items-start gap-3">
+                        <Clock className="h-5 w-5 text-yellow-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-yellow-800">Awaiting Processing</p>
+                          {remainingDays > 0 ? (
+                            <p className="text-sm text-yellow-700 mt-1">
+                              Your redemption request is pending. Estimated approval in{" "}
+                              <span className="font-semibold">{remainingDays} day{remainingDays !== 1 ? "s" : ""}</span>.
+                            </p>
+                          ) : (
+                            <p className="text-sm text-yellow-700 mt-1">
+                              Your request has passed the standard 7-day processing period and will be approved shortly.
+                              Sorry for the delay.
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )
+                })()}
 
                 {request.status === "failed" && (
                   <div className="pt-4 border-t bg-red-50 p-3 rounded">

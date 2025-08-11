@@ -1,19 +1,20 @@
-"use client";
-import { useState, Suspense, useEffect } from "react";
-import type React from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { X, Menu, Wallet, TrendingUp, ArrowRight, TrendingDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { RainbowConnectButton } from "@/components/RainbowConnectButton";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAccount } from "wagmi";
-import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { PageTransition } from "@/components/PageTransition";
+"use client"
+import { useState, Suspense } from "react"
+import type React from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { X, Menu, Wallet, TrendingUp, ArrowRight, TrendingDown, Building2, Hammer } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { RainbowConnectButton } from "@/components/RainbowConnectButton"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useAccount } from "wagmi"
+import { LoadingSpinner } from "@/components/LoadingSpinner"
+import { PageTransition } from "@/components/PageTransition"
+import { UserTypeProvider, useUserType } from "@/contexts/UserTypeContexts"
 
 /**
  * A skeleton component that is used to render a placeholder for the app header
@@ -41,43 +42,49 @@ function AppHeaderSkeleton() {
         </div>
       </div>
     </nav>
-  );
+  )
 }
 
 function AppHeader() {
-  const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const pathname = usePathname()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const { userType, isRetail, isInstitutional } = useUserType()
 
-  const navLinks = [
+  const allNavLinks = [
     {
       href: "/mint",
       label: "Mint",
-      icon: ArrowRight,
-      badge: "Retail",
+      icon: Hammer,
+      badge: null,
+      userTypes: ["retail"],
     },
     {
       href: "/vault",
       label: "Vault",
-      icon: Wallet,
+      icon: Building2,
       badge: null,
+      userTypes: ["institutional"],
     },
     {
       href: "/earn",
       label: "Earn",
       icon: TrendingUp,
       badge: null,
+      userTypes: ["retail", "institutional"],
     },
     {
       href: "/redeem",
       label: "Redeem",
       icon: TrendingDown,
       badge: null,
+      userTypes: ["retail"],
     },
-    
-  ];
+  ]
 
-  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+  const navLinks = userType ? allNavLinks.filter((link) => link.userTypes.includes(userType)) : allNavLinks
+
+  const closeMobileMenu = () => setIsMobileMenuOpen(false)
 
   /**
    * Handles navigation to a different page. If the user is on a different
@@ -88,12 +95,12 @@ function AppHeader() {
    */
   const handleNavigation = (href: string) => {
     if (pathname !== href) {
-      setIsTransitioning(true);
-      closeMobileMenu();
+      setIsTransitioning(true)
+      closeMobileMenu()
       // Let the page transition handle the loading state
-      setTimeout(() => setIsTransitioning(false), 300);
+      setTimeout(() => setIsTransitioning(false), 300)
     }
-  };
+  }
 
   return (
     <nav className="bg-card/50 backdrop-blur-lg border-b border-border/50 sticky top-0 z-40 transition-all duration-300">
@@ -105,15 +112,22 @@ function AppHeader() {
               className="flex-shrink-0 text-foreground font-bold text-2xl cursor-pointer hover:text-primary transition-colors duration-200 group"
               onClick={() => handleNavigation("/")}
             >
-              <span className="group-hover:scale-105 transition-transform duration-200 inline-block">
-                Tano
-              </span>
+              <span className="group-hover:scale-105 transition-transform duration-200 inline-block">Tano</span>
             </Link>
+
+            {userType && (
+              <div className="hidden md:flex ml-4">
+                <Badge variant={isRetail ? "default" : "secondary"} className="text-xs capitalize">
+                  {userType}
+                </Badge>
+              </div>
+            )}
+
             <div className="hidden md:block ml-10">
               <div className="flex items-baseline space-x-4">
                 {navLinks.map((link) => {
-                  const Icon = link.icon;
-                  const isActive = pathname.startsWith(link.href);
+                  const Icon = link.icon
+                  const isActive = pathname.startsWith(link.href)
                   return (
                     <Link
                       key={link.href}
@@ -123,19 +137,13 @@ function AppHeader() {
                         "group relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2",
                         isActive
                           ? "bg-primary/10 text-primary border border-primary/20 shadow-sm"
-                          : "text-muted-foreground hover:bg-secondary/50 hover:text-secondary-foreground hover:scale-105"
+                          : "text-muted-foreground hover:bg-secondary/50 hover:text-secondary-foreground hover:scale-105",
                       )}
                     >
-                      <Icon
-                        size={16}
-                        className="transition-transform group-hover:scale-110"
-                      />
+                      <Icon size={16} className="transition-transform group-hover:scale-110" />
                       {link.label}
                       {link.badge && (
-                        <Badge
-                          variant="secondary"
-                          className="ml-1 text-xs animate-pulse"
-                        >
+                        <Badge variant="secondary" className="ml-1 text-xs animate-pulse">
                           {link.badge}
                         </Badge>
                       )}
@@ -143,13 +151,19 @@ function AppHeader() {
                         <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
                       )}
                     </Link>
-                  );
+                  )
                 })}
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
+            {userType && (
+              <Button variant="outline" size="sm" asChild className="hidden sm:flex text-xs bg-transparent">
+                <Link href="/select">Switch Mode</Link>
+              </Button>
+            )}
+
             <div className="hidden sm:block">
               <RainbowConnectButton />
             </div>
@@ -165,18 +179,14 @@ function AppHeader() {
                   size={20}
                   className={cn(
                     "absolute transition-all duration-200",
-                    isMobileMenuOpen
-                      ? "rotate-90 opacity-0"
-                      : "rotate-0 opacity-100"
+                    isMobileMenuOpen ? "rotate-90 opacity-0" : "rotate-0 opacity-100",
                   )}
                 />
                 <X
                   size={20}
                   className={cn(
                     "absolute transition-all duration-200",
-                    isMobileMenuOpen
-                      ? "rotate-0 opacity-100"
-                      : "-rotate-90 opacity-0"
+                    isMobileMenuOpen ? "rotate-0 opacity-100" : "-rotate-90 opacity-0",
                   )}
                 />
               </div>
@@ -190,13 +200,24 @@ function AppHeader() {
       <div
         className={cn(
           "md:hidden transition-all duration-300 ease-in-out overflow-hidden",
-          isMobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          isMobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
         )}
       >
         <div className="px-4 pt-2 pb-3 space-y-1 bg-card/80 backdrop-blur-sm border-t border-border/50">
+          {userType && (
+            <div className="flex items-center justify-between px-3 py-2 mb-2">
+              <Badge variant={isRetail ? "default" : "secondary"} className="text-xs capitalize">
+                {userType} Mode
+              </Badge>
+              <Button variant="outline" size="sm" asChild className="text-xs bg-transparent">
+                <Link href="/select">Switch</Link>
+              </Button>
+            </div>
+          )}
+
           {navLinks.map((link, index) => {
-            const Icon = link.icon;
-            const isActive = pathname.startsWith(link.href);
+            const Icon = link.icon
+            const isActive = pathname.startsWith(link.href)
             return (
               <Link
                 key={link.href}
@@ -207,13 +228,14 @@ function AppHeader() {
                   "transform hover:scale-[1.02] hover:shadow-sm",
                   isActive
                     ? "bg-primary/10 text-primary border border-primary/20"
-                    : "text-muted-foreground hover:bg-secondary/50 hover:text-secondary-foreground"
+                    : "text-muted-foreground hover:bg-secondary/50 hover:text-secondary-foreground",
                 )}
                 style={{
+                  animationName: isMobileMenuOpen ? "slideInLeft" : undefined,
+                  animationDuration: "0.3s",
+                  animationTimingFunction: "ease-out",
+                  animationFillMode: "forwards",
                   animationDelay: `${index * 50}ms`,
-                  animation: isMobileMenuOpen
-                    ? "slideInLeft 0.3s ease-out forwards"
-                    : undefined,
                 }}
               >
                 <Icon size={18} />
@@ -225,7 +247,7 @@ function AppHeader() {
                 )}
                 <ArrowRight size={16} className="ml-auto opacity-50" />
               </Link>
-            );
+            )
           })}
           <div className="pt-2 border-t border-border/50">
             <RainbowConnectButton />
@@ -240,12 +262,12 @@ function AppHeader() {
         </div>
       )}
     </nav>
-  );
+  )
 }
 
 function WalletGuard({ children }: { children: React.ReactNode }) {
-  const { isConnected, isConnecting } = useAccount();
-  const router = useRouter();
+  const { isConnected, isConnecting } = useAccount()
+  const router = useRouter()
 
   if (isConnecting) {
     return (
@@ -255,7 +277,7 @@ function WalletGuard({ children }: { children: React.ReactNode }) {
           <div className="text-muted-foreground">Connecting wallet...</div>
         </div>
       </div>
-    );
+    )
   }
 
   if (!isConnected) {
@@ -267,15 +289,11 @@ function WalletGuard({ children }: { children: React.ReactNode }) {
               <Wallet className="w-8 h-8" />
             </div>
           </div>
-          <h2 className="text-xl font-semibold text-foreground">
-            Wallet Not Connected
-          </h2>
-          <div className="text-muted-foreground text-sm">
-            Please connect your wallet to continue using the app.
-          </div>
+          <h2 className="text-xl font-semibold text-foreground">Wallet Not Connected</h2>
+          <div className="text-muted-foreground text-sm">Please connect your wallet to continue using the app.</div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full bg-transparent">
                 Go to Homepage
               </Button>
             </Link>
@@ -285,10 +303,10 @@ function WalletGuard({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
-  return <>{children}</>;
+  return <>{children}</>
 }
 
 /**
@@ -310,15 +328,17 @@ function WalletGuard({ children }: { children: React.ReactNode }) {
  */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Suspense fallback={<AppHeaderSkeleton />}>
-        <AppHeader />
-      </Suspense>
-      <main className="flex-1 relative">
-        <WalletGuard>
-          <PageTransition>{children}</PageTransition>
-        </WalletGuard>
-      </main>
-    </div>
-  );
+    <UserTypeProvider>
+      <div className="min-h-screen flex flex-col bg-background">
+        <Suspense fallback={<AppHeaderSkeleton />}>
+          <AppHeader />
+        </Suspense>
+        <main className="flex-1 relative">
+          <WalletGuard>
+            <PageTransition>{children}</PageTransition>
+          </WalletGuard>
+        </main>
+      </div>
+    </UserTypeProvider>
+  )
 }

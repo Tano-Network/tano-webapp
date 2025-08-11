@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { VAULTS } from "@/lib/constants"
 import Link from "next/link"
+import { UserGuide } from "@/components/UserGuide"
 
 // ⬇ Added imports for dialog & scroll area
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -165,8 +166,14 @@ export default function MintDashboard() {
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString()
   const formatDateTime = (dateString: string) => new Date(dateString).toLocaleString()
 
-  const MintRequestTable = ({ requests, title, isUserTable = false }: { requests: MintRequest[], title: string, isUserTable?: boolean }) => (
-    <Card className={isUserTable ? "border-2 border-blue-200 bg-blue-50/30" : ""}>
+  const MintRequestTable = ({
+    requests,
+    title,
+    isUserTable = false,
+  }: { requests: MintRequest[]; title: string; isUserTable?: boolean }) => (
+    <Card
+      className={isUserTable ? "border-2 border-blue-200 bg-blue-50/30 dark:border-blue-800 dark:bg-blue-950/30" : ""}
+    >
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -180,7 +187,13 @@ export default function MintDashboard() {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={fetchRequests} disabled={isLoading} className="flex items-center gap-2 bg-transparent">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchRequests}
+              disabled={isLoading}
+              className="flex items-center gap-2 bg-transparent"
+            >
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
@@ -250,11 +263,13 @@ export default function MintDashboard() {
                 {requests.map((request) => {
                   const vault = getVaultInfo(request.vaultId)
                   return (
-                    <TableRow key={request.id} className={isUserTable ? "bg-blue-50/50" : ""}>
+                    <TableRow key={request.id} className={isUserTable ? "bg-blue-50/50 dark:bg-blue-950/50" : ""}>
                       {/* Vault */}
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className={`bg-gradient-to-br ${getVaultIconColor(request.vaultId)} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg`}>
+                          <div
+                            className={`bg-gradient-to-br ${getVaultIconColor(request.vaultId)} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg`}
+                          >
                             {getVaultIcon(request.vaultId)}
                           </div>
                           <div>
@@ -266,7 +281,9 @@ export default function MintDashboard() {
                       {/* Amount */}
                       <TableCell>
                         <div className="font-mono">{request.amount}</div>
-                        <div className="text-xs text-muted-foreground">{vault?.nativeChainName || request.vaultChain}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {vault?.nativeChainName || request.vaultChain}
+                        </div>
                       </TableCell>
                       {/* Status */}
                       <TableCell>
@@ -294,7 +311,13 @@ export default function MintDashboard() {
                         <div className="flex items-center gap-2">
                           <div className="font-mono text-xs">{formatAddress(request.transactionHash)}</div>
                           {vault?.explorerUrl && (
-                            <Button variant="ghost" size="sm" onClick={() => window.open(`${vault.explorerUrl}/tx/${request.transactionHash}`, "_blank")}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                window.open(`${vault.explorerUrl}/tx/${request.transactionHash}`, "_blank")
+                              }
+                            >
                               <ExternalLink className="h-3 w-3" />
                             </Button>
                           )}
@@ -322,17 +345,23 @@ export default function MintDashboard() {
                       </TableCell>
                       {/* Request Type */}
                       <TableCell>
-                        <Badge variant="outline" className="text-xs">Retail</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          Retail
+                        </Badge>
                       </TableCell>
                       {/* Created */}
                       <TableCell>
                         <div className="text-xs">{formatDate(request.createdAt)}</div>
-                        <div className="text-xs text-muted-foreground">{formatDateTime(request.createdAt).split(" ")[1]}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDateTime(request.createdAt).split(" ")[1]}
+                        </div>
                       </TableCell>
                       {/* Updated */}
                       <TableCell>
                         <div className="text-xs">{formatDate(request.updatedAt)}</div>
-                        <div className="text-xs text-muted-foreground">{formatDateTime(request.updatedAt).split(" ")[1]}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDateTime(request.updatedAt).split(" ")[1]}
+                        </div>
                       </TableCell>
                       {/* Proof */}
                       <TableCell>
@@ -364,7 +393,12 @@ export default function MintDashboard() {
                       {/* Mint Tx */}
                       <TableCell>
                         {request.mintTxLink ? (
-                          <Button variant="ghost" size="sm" onClick={() => window.open(request.mintTxLink, "_blank")} className="text-xs">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(request.mintTxLink, "_blank")}
+                            className="text-xs"
+                          >
                             <ExternalLink className="h-3 w-3 mr-1" />
                             View
                           </Button>
@@ -410,6 +444,10 @@ export default function MintDashboard() {
               </Button>
             </Link>
           </div>
+        </div>
+
+        <div className="mb-8">
+          <UserGuide type="mint" />
         </div>
 
         <div className="space-y-8">
