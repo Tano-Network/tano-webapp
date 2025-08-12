@@ -328,6 +328,8 @@ function WalletGuard({ children }: { children: React.ReactNode }) {
  */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
+    <>
+    <Suspense>
     <UserTypeProvider>
       <div className="min-h-screen flex flex-col bg-background">
         <Suspense fallback={<AppHeaderSkeleton />}>
@@ -340,5 +342,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     </UserTypeProvider>
+   </Suspense> </>
   )
 }
