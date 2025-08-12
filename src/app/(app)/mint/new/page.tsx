@@ -1,5 +1,4 @@
 "use client"
-
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Wallet, FileText, QrCode, Clock, CheckCircle, Send } from "lucide-react"
@@ -14,11 +13,8 @@ export default function NewMintRequest() {
   }
 
   const handleBack = () => {
-
     router.push("/mint")
   }
-}
-
 
   const steps = [
     { number: 1, title: "Connect Wallet", icon: Wallet, description: "Connect your EVM wallet" },
@@ -74,45 +70,7 @@ export default function NewMintRequest() {
           </Button>
         </Link>
         <div className="text-sm text-muted-foreground">Admin-Assisted Retail Flow</div>
-
       </div>
     </div>
-
-    {/* Step Content */}
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          {currentStep === 1 ? "Step 1: Vault Selection & Transaction" : "Step 2: Request Submission"}
-        </CardTitle>
-        <CardDescription>
-          {currentStep === 1
-            ? "Select your vault and provide transaction details"
-            : "Review and submit your mint request"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {currentStep === 1 ? (
-          <MintStepOne onComplete={handleStepOneComplete} />
-        ) : (
-          <MintStepTwo
-            formData={stepOneData}
-            onComplete={handleStepTwoComplete}
-            onBack={() => setCurrentStep(1)}
-          />
-        )}
-      </CardContent>
-    </Card>
-
-    {/* Navigation Footer */}
-    <div className="flex justify-between items-center mt-6">
-      <Link href="/mint">
-        <Button variant="outline" className="gap-2 bg-transparent">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
-        </Button>
-      </Link>
-      <div className="text-sm text-muted-foreground">Step {currentStep} of 2</div>
-    </div>
-  </div>
-)
+  )
 }
