@@ -29,9 +29,6 @@ import { UserGuide } from "@/components/UserGuide"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-// ⬇ Added imports for dialog & scroll area
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface MintRequest {
   id: string
