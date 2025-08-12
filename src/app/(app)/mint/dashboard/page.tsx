@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect ,Suspense} from "react"
 import { useAccount } from "wagmi"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -178,7 +178,9 @@ export default function MintDashboard() {
     title: string
     isUserTable?: boolean
   }) => (
-    <Card className={isUserTable ? "border-2 border-blue-200 bg-blue-50/30" : ""}>
+    <Card
+      className={isUserTable ? "border-2 border-blue-200 bg-blue-50/30 dark:border-blue-800 dark:bg-blue-950/30" : ""}
+    >
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -258,7 +260,7 @@ export default function MintDashboard() {
                 {requests.map((request) => {
                   const vault = getVaultInfo(request.vaultId)
                   return (
-                    <TableRow key={request.id} className={isUserTable ? "bg-blue-50/50" : ""}>
+                    <TableRow key={request.id} className={isUserTable ? "bg-blue-50/50 dark:bg-blue-950/50" : ""}>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div

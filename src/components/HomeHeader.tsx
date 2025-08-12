@@ -34,7 +34,7 @@ export function HomeHeader() {
           </div>
 
           <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
-            <Link href="/vault">Launch App</Link>
+            <Link href="/select">Launch App</Link>
           </Button>
           <ThemeToggle />
         </div>

@@ -37,6 +37,7 @@ export interface RedeemRequest {
   status: "pending" | "processing" | "completed" | "failed"
 }
 
+
 const dbName = process.env.DB_NAME || 'bima-mainnet';
 
 const connectionConfig = {
