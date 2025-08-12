@@ -1,9 +1,27 @@
 "use client"
 import { useRouter } from "next/navigation"
+import { Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Wallet, FileText, QrCode, Clock, CheckCircle, Send } from "lucide-react"
 import Link from "next/link"
 import { AdminAssistedMintWizard } from "@/components/AdminAssistedMintWizard"
+
+function MintWizardLoading() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <span className="ml-2 text-muted-foreground">Loading mint wizard...</span>
+    </div>
+  )
+}
+
+function MintWizardWrapper({ onComplete }: { onComplete: () => void }) {
+  return (
+    <Suspense fallback={<MintWizardLoading />}>
+      <AdminAssistedMintWizard onComplete={onComplete} />
+    </Suspense>
+  )
+}
 
 export default function NewMintRequest() {
   const router = useRouter()
@@ -58,8 +76,7 @@ export default function NewMintRequest() {
         </div>
       </div>
 
-      {/* Admin-Assisted Wizard */}
-      <AdminAssistedMintWizard onComplete={handleComplete} />
+      <MintWizardWrapper onComplete={handleComplete} />
 
       {/* Navigation Footer */}
       <div className="flex justify-between items-center mt-6">
