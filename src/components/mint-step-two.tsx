@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import type { MintFormData } from "@/app/(app)/mint/page"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -81,6 +82,8 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
           proofSystem: "plonk",
         }),
       })
+      const data = (await res.json()) as DogeProofResponse & { error?: string }
+
 
       const data = await response.json()
 
@@ -138,8 +141,12 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
           utxo: txHash, // Use txHash as UTXO identifier
           proof: JSON.stringify(dogeProof), // Store the complete proof object
           requestType: "retail",
+
+     
         }),
       })
+      const data = (await res.json()) as ValidateResponse
+
 
       const data = await response.json()
       if (!response.ok) {
@@ -167,11 +174,19 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
         title: "Submission Error",
         description: err?.message || "Failed to submit mint request. Please try again.",
         variant: "destructive",
+
       })
-    } finally {
-      setIsSubmitting(false)
     }
+  } catch (err: any) {
+    toast({
+      title: "Validation Error",
+      description: err?.message || "Failed to validate transaction.",
+      variant: "destructive",
+    })
+  } finally {
+    setIsValidating(false)
   }
+}
 
   const handleSubmitClick = () => {
     if (canSubmit) {
@@ -325,4 +340,5 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
       />
     </div>
   )
+
 }
