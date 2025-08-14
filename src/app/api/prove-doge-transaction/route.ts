@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     const upstream = await fetch(
-      "http://165.22.220.156:3005/prove-doge-transaction",
+      "http://165.22.220.156:3007/prove-doge-transaction",
       {
         method: "POST",
         headers: {
