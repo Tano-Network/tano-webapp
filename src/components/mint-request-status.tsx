@@ -53,7 +53,7 @@ export function MintRequestStatus() {
 
     try {
       setIsLoading(true)
-      const response = await fetch(`/api/mint-requests?address=${address}`)
+      const response = await fetch(`/api/mint-records?address=${address}`)
 
       if (!response.ok) {
         throw new Error("Failed to fetch mint requests")

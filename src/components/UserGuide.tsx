@@ -31,7 +31,7 @@ interface GuideContent {
 
 const guideContent: Record<GuideType, GuideContent> = {
   mint: {
-    title: "How to Submit Mint Request",
+    title: "How to Mint Tokens ?",
     description: "Follow these steps for admin-assisted minting in retail.",
     steps: [
       {
@@ -61,7 +61,7 @@ const guideContent: Record<GuideType, GuideContent> = {
         tips: ["The hash starts with '0x'", "Keep it safe for validation"],
       },
       {
-        title: "Validate & Submit Mint Request",
+        title: "Validate & Mint using Connected Wallet ",
         description: "Paste the transaction hash into the mint request form and submit for processing.",
         tips: ["Ensure the hash is correct", "Check for typos before submission"],
       },

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 type ProveBody = {
   txHash?: string
   proofSystem?: string
+  ownerAddress?: string
 }
 
 export async function POST(request: Request) {
@@ -10,6 +11,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as ProveBody
     const txHash = body?.txHash
     const proofSystem = body?.proofSystem || "plonk"
+    const ownerAddress = body?.ownerAddress
 
     if (!txHash || typeof txHash !== "string") {
       return NextResponse.json(
@@ -19,13 +21,13 @@ export async function POST(request: Request) {
     }
 
     const upstream = await fetch(
-      "http://165.22.220.156:3005/prove-doge-transaction",
+      "http://165.22.220.156:4000/prove-doge-transaction",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ txHash, proofSystem }),
+        body: JSON.stringify({ ownerAddress, txHash, proofSystem }),
       }
     )
 

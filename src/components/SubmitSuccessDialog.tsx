@@ -47,7 +47,7 @@ export function SubmitSuccessDialog({ isOpen, onClose, onGoToDashboard, requestD
             Mint Request Submitted Successfully!
           </DialogTitle>
           <DialogDescription>
-            Your admin-assisted mint request has been successfully submitted and is now in the approval queue.
+            Your retail mint request has been successfully submitted and is now in the approval queue.
           </DialogDescription>
         </DialogHeader>
 
