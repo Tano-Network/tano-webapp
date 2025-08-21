@@ -36,18 +36,18 @@ interface MintRequest {
   evmChain: string
   evmChainId: number
   vaultId: string
-  vaultName: string
   vaultChain: string
   userVaultChainAddress: string
   amount: string
   utxo: string
-  transactionHash: string
-  whitelisted: boolean
-  mintTxLink?: string
+  native_hash: string
+  minting_hash: string
+  verified: number
+  whitelisted: number
   proof: string
   createdAt: string
   updatedAt: string
-  status: "pending" | "verified" | "whitelisted" | "minted" | "rejected"
+  status: "pending" | "verified" | "whitelisted" | "minted" | "rejected" | "completed"
   requestType: string
 }
 
@@ -66,24 +66,25 @@ export default function MintDashboard() {
     try {
       setIsLoading(true)
 
-      const allResponse = await fetch("/api/mint-requests")
+      const allResponse = await fetch("/api/mint-records")
       if (allResponse.ok) {
         const allData = await allResponse.json()
-        setAllRequests(allData.requests || [])
+        setAllRequests(allData.records || [])
       }
 
       if (address && isConnected) {
-        const userResponse = await fetch(`/api/mint-requests?address=${address}`)
+        const userResponse = await fetch(`/api/mint-records?address=${address}`)
         if (userResponse.ok) {
           const userData = await userResponse.json()
-          setUserRequests(userData.requests || [])
+          console.log("User mint records:", userData)
+          setUserRequests(userData.records || [])
         }
       }
     } catch (error: any) {
-      console.error("Error fetching mint requests:", error)
+      console.error("Error fetching mint records:", error)
       toast({
         title: "Error",
-        description: "Failed to load mint requests. Please try again.",
+        description: "Failed to load mint records. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -168,7 +169,8 @@ export default function MintDashboard() {
   const formatDateTime = (dateString: string) => new Date(dateString).toLocaleString()
 
 
-  const MintRequestTable = ({
+  const MintRecordTable = ({
+
     requests,
     title,
     isUserTable = false,
@@ -186,11 +188,17 @@ export default function MintDashboard() {
               <Badge variant="secondary">{requests.length}</Badge>
             </CardTitle>
             <CardDescription>
-              {isUserTable ? "Your mint requests - highlighted for easy tracking" : "All mint requests in the system"}
+              {isUserTable ? "Your mint records - highlighted for easy tracking" : "All mint records in the system"}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={fetchRequests} disabled={isLoading} className="flex items-center gap-2 bg-transparent">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchRequests}
+              disabled={isLoading}
+              className="flex items-center gap-2 bg-transparent"
+            >
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
@@ -198,7 +206,7 @@ export default function MintDashboard() {
               <Link href="/mint/new">
                 <Button size="sm" className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
-                  Submit Mint Request
+                  Mint
                 </Button>
               </Link>
             )}
@@ -221,15 +229,15 @@ export default function MintDashboard() {
         ) : requests.length === 0 ? (
           <div className="text-center py-8">
             <Coins className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">{isUserTable ? "No Mint Requests Yet" : "No Requests Found"}</h3>
+            <h3 className="text-lg font-semibold mb-2">{isUserTable ? "No Mint Records Yet" : "No Mint Records Found"}</h3>
             <p className="text-muted-foreground mb-4">
-              {isUserTable ? "You haven't submitted any mint requests yet." : "No mint requests found in the system."}
+              {isUserTable ? "You haven't submitted any mint records yet." : "No mint records found in the system."}
             </p>
             {isUserTable && (
               <Link href="/mint/new">
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Submit Mint Request
+                  Mint
                 </Button>
               </Link>
             )}
@@ -247,8 +255,6 @@ export default function MintDashboard() {
                   <TableHead>Chain</TableHead>
                   <TableHead>Transaction Hash</TableHead>
                   <TableHead>UTXO</TableHead>
-                  <TableHead>Admin Approval</TableHead>
-                  <TableHead>Request Type</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead>Updated</TableHead>
                   <TableHead>Proof</TableHead>
@@ -266,7 +272,9 @@ export default function MintDashboard() {
                       {/* Vault */}
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className={`bg-gradient-to-br ${getVaultIconColor(request.vaultId)} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg`}>
+                          <div
+                            className={`bg-gradient-to-br ${getVaultIconColor(request.vaultId)} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg`}
+                          >
                             {getVaultIcon(request.vaultId)}
                           </div>
                           <div>
@@ -278,7 +286,9 @@ export default function MintDashboard() {
                       {/* Amount */}
                       <TableCell>
                         <div className="font-mono">{request.amount}</div>
-                        <div className="text-xs text-muted-foreground">{vault?.nativeChainName || request.vaultChain}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {vault?.nativeChainName || request.vaultChain}
+                        </div>
                       </TableCell>
                       {/* Status */}
                       <TableCell>
@@ -304,9 +314,15 @@ export default function MintDashboard() {
                       {/* Tx Hash */}
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="font-mono text-xs">{formatAddress(request.transactionHash)}</div>
+                          <div className="font-mono text-xs">{formatAddress(request.native_hash)}</div>
                           {vault?.explorerUrl && (
-                            <Button variant="ghost" size="sm" onClick={() => window.open(`${vault.explorerUrl}/tx/${request.transactionHash}`, "_blank")}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                window.open(`${vault.explorerUrl}/tx/${request.native_hash}`, "_blank")
+                              }
+                            >
                               <ExternalLink className="h-3 w-3" />
                             </Button>
                           )}
@@ -316,35 +332,20 @@ export default function MintDashboard() {
                       <TableCell>
                         <div className="font-mono text-xs">{formatAddress(request.utxo)}</div>
                       </TableCell>
-                      {/* Approval */}
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {request.whitelisted ? (
-                            <div className="flex items-center gap-1 text-green-600">
-                              <CheckCircle className="h-4 w-4" />
-                              <span className="text-xs">Approved</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1 text-orange-600">
-                              <Clock className="h-4 w-4" />
-                              <span className="text-xs">Pending</span>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      {/* Request Type */}
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">Retail</Badge>
-                      </TableCell>
+                      
                       {/* Created */}
                       <TableCell>
                         <div className="text-xs">{formatDate(request.createdAt)}</div>
-                        <div className="text-xs text-muted-foreground">{formatDateTime(request.createdAt).split(" ")[1]}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDateTime(request.createdAt).split(" ")[1]}
+                        </div>
                       </TableCell>
                       {/* Updated */}
                       <TableCell>
                         <div className="text-xs">{formatDate(request.updatedAt)}</div>
-                        <div className="text-xs text-muted-foreground">{formatDateTime(request.updatedAt).split(" ")[1]}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDateTime(request.updatedAt).split(" ")[1]}
+                        </div>
                       </TableCell>
                       {/* Proof */}
                       <TableCell>
@@ -375,14 +376,19 @@ export default function MintDashboard() {
                       </TableCell>
                       {/* Mint Tx */}
                       <TableCell>
-                        {request.mintTxLink ? (
-                          <Button variant="ghost" size="sm" onClick={() => window.open(request.mintTxLink, "_blank")} className="text-xs">
+                        {request.minting_hash ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(`https://sepolia.etherscan.io/tx/${request.minting_hash}`, "_blank")}
+                            className="text-xs"
+                          >
                             <ExternalLink className="h-3 w-3 mr-1" />
                             View
                           </Button>
                         ) : (
                           <span className="text-xs text-muted-foreground">
-                            {request.status === "minted" ? "Missing" : "Pending"}
+                            {request.status === "completed" ? "Missing" : "Pending"}
                           </span>
                         )}
                       </TableCell>
@@ -413,12 +419,12 @@ export default function MintDashboard() {
       <div className="max-w-full mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold">Mint Dashboard</h1>
-          <p className="text-muted-foreground mt-2">View and manage all mint requests in the system</p>
+          <p className="text-muted-foreground mt-2">View and manage all mint records in the system</p>
           <div className="mt-4">
             <Link href="/mint/new">
               <Button size="lg" className="flex items-center gap-2">
                 <Plus className="h-5 w-5" />
-                Submit New Mint Request
+                New Mint
               </Button>
             </Link>
           </div>
@@ -430,9 +436,9 @@ export default function MintDashboard() {
 
         <div className="space-y-8">
           {isConnected && address && (
-            <MintRequestTable requests={userRequests} title="Your Mint Requests" isUserTable={true} />
+            <MintRecordTable requests={userRequests} title="Your Mint Records" isUserTable={true} />
           )}
-          <MintRequestTable requests={allRequests} title="All Mint Requests" isUserTable={false} />
+          <MintRecordTable requests={allRequests} title="All Mint Records" isUserTable={false} />
         </div>
       </div>
 

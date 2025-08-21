@@ -57,7 +57,7 @@ export default function MintDashboard() {
       setIsLoading(true)
 
       // Fetch all requests
-      const allResponse = await fetch("/api/mint-requests")
+      const allResponse = await fetch("/api/mint-records")
       if (allResponse.ok) {
         const allData = await allResponse.json()
         setAllRequests(allData.requests || [])
@@ -65,17 +65,17 @@ export default function MintDashboard() {
 
       // Fetch user requests if connected
       if (address && isConnected) {
-        const userResponse = await fetch(`/api/mint-requests?address=${address}`)
+        const userResponse = await fetch(`/api/mint-records?address=${address}`)
         if (userResponse.ok) {
           const userData = await userResponse.json()
           setUserRequests(userData.requests || [])
         }
       }
     } catch (error: any) {
-      console.error("Error fetching mint requests:", error)
+      console.error("Error fetching mint records:", error)
       toast({
         title: "Error",
-        description: "Failed to load mint requests. Please try again.",
+        description: "Failed to load mint records. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -169,7 +169,7 @@ export default function MintDashboard() {
     return new Date(dateString).toLocaleString()
   }
 
-  const MintRequestTable = ({
+  const MintRecordTable = ({
     requests,
     title,
     isUserTable = false,
@@ -190,7 +190,7 @@ export default function MintDashboard() {
               <Badge variant="secondary">{requests.length}</Badge>
             </CardTitle>
             <CardDescription>
-              {isUserTable ? "Your mint requests - highlighted for easy tracking" : "All mint requests in the system"}
+              {isUserTable ? "Your mint records - highlighted for easy tracking" : "All mint records in the system"}
             </CardDescription>
           </div>
           <Button
@@ -221,15 +221,15 @@ export default function MintDashboard() {
         ) : requests.length === 0 ? (
           <div className="text-center py-8">
             <Coins className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">{isUserTable ? "No Mint Requests Yet" : "No Requests Found"}</h3>
+            <h3 className="text-lg font-semibold mb-2">{isUserTable ? "No Mint Records Yet" : "No Requests Found"}</h3>
             <p className="text-muted-foreground mb-4">
-              {isUserTable ? "You haven't submitted any mint requests yet." : "No mint requests found in the system."}
+              {isUserTable ? "You haven't submitted any mint records yet." : "No mint records found in the system."}
             </p>
             {isUserTable && (
               <Link href="/mint">
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Mint Request
+                  Create Mint Record
                 </Button>
               </Link>
             )}
@@ -247,8 +247,6 @@ export default function MintDashboard() {
                   <TableHead className="min-w-[120px]">Chain</TableHead>
                   <TableHead className="min-w-[160px]">Transaction Hash</TableHead>
                   <TableHead className="min-w-[120px]">UTXO</TableHead>
-                  <TableHead className="min-w-[120px]">Admin Approval</TableHead>
-                  <TableHead className="min-w-[100px]">Request Type</TableHead>
                   <TableHead className="min-w-[120px]">Created</TableHead>
                   <TableHead className="min-w-[120px]">Updated</TableHead>
                   <TableHead className="min-w-[100px]">Proof</TableHead>
@@ -315,26 +313,6 @@ export default function MintDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="font-mono text-xs">{formatAddress(request.utxo)}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {request.whitelisted ? (
-                            <div className="flex items-center gap-1 text-green-600">
-                              <CheckCircle className="h-4 w-4" />
-                              <span className="text-xs">Approved</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1 text-orange-600">
-                              <Clock className="h-4 w-4" />
-                              <span className="text-xs">Pending</span>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          Retail
-                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="text-xs">{formatDate(request.createdAt)}</div>
@@ -411,17 +389,17 @@ export default function MintDashboard() {
       <div className="max-w-full mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold">Mint Dashboard</h1>
-          <p className="text-muted-foreground mt-2">View and manage all mint requests in the system</p>
+          <p className="text-muted-foreground mt-2">View and manage all mint records in the system</p>
         </div>
 
         <div className="space-y-8">
           {/* User Requests Table (if connected) */}
           {isConnected && address && (
-            <MintRequestTable requests={userRequests} title="Your Mint Requests" isUserTable={true} />
+            <MintRecordTable requests={userRequests} title="Your Mint Records" isUserTable={true} />
           )}
 
           {/* All Requests Table */}
-          <MintRequestTable requests={allRequests} title="All Mint Requests" isUserTable={false} />
+          <MintRecordTable requests={allRequests} title="All Mint Records" isUserTable={false} />
         </div>
       </div>
     </div>

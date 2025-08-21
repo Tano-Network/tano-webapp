@@ -6,20 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
-import {
-  Wallet,
-  FileText,
-  QrCode,
-  CheckCircle,
-  Send,
-  ArrowRight,
-  ArrowLeft,
-  Info,
-  AlertTriangle,
-  Check,
-} from "lucide-react"
+
+import { Wallet, FileText, QrCode, Vault, ArrowRight, ArrowLeft, Info, AlertTriangle, Check } from "lucide-react"
 import { MintStepOne } from "@/components/mint-step-one"
-import { MintStepTwo } from "@/components/mint-step-two"
+import { MintStepThree } from "@/components/mint-step-three"
+import { MintStepFour } from "@/components/mint-step-four"
+
 
 interface Props {
   onComplete: () => void
@@ -39,6 +31,9 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
   const { isConnected } = useAccount()
   const [currentStep, setCurrentStep] = useState(1)
   const [stepOneData, setStepOneData] = useState<any>(null)
+
+  const [validationData, setValidationData] = useState<any>(null)
+
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
 
   const [steps, setSteps] = useState<StepData[]>([
@@ -62,27 +57,22 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
     },
     {
       number: 3,
-      title: "Send & Add Hash",
+
+      title: "Validate Transaction",
       icon: QrCode,
-      description: "Send tokens via QR and add tx hash",
+      description: "Send tokens and validate transaction",
+
       status: "pending",
       isValid: false,
       canProceed: false,
     },
     {
       number: 4,
-      title: "Validate",
-      icon: CheckCircle,
-      description: "Validate transaction details",
-      status: "pending",
-      isValid: false,
-      canProceed: false,
-    },
-    {
-      number: 5,
-      title: "Submit",
-      icon: Send,
-      description: "Submit mint request",
+
+      title: "Mint Tokens",
+      icon: Vault,
+      description: "Execute smart contract minting",
+
       status: "pending",
       isValid: false,
       canProceed: false,
@@ -108,46 +98,48 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
               canProceed: !!stepOneData,
             }
           case 3:
-          case 4:
-          case 5:
+
             return {
               ...step,
-              status:
-                currentStep === step.number
+              status: validationData
+                ? "completed"
+                : currentStep === 3
                   ? "current"
-                  : completedSteps.has(step.number)
-                    ? "completed"
-                    : stepOneData
-                      ? "pending"
-                      : "disabled",
-              isValid: completedSteps.has(step.number),
-              canProceed: stepOneData && (step.number <= currentStep || completedSteps.has(step.number - 1)),
+                  : stepOneData
+                    ? "pending"
+                    : "disabled",
+              isValid: !!validationData,
+              canProceed: !!validationData,
+            }
+          case 4:
+            return {
+              ...step,
+              status: currentStep === 4 ? "current" : validationData ? "pending" : "disabled",
+              isValid: completedSteps.has(4),
+              canProceed: !!validationData,
+
             }
           default:
             return step
         }
       }),
     )
-  }, [isConnected, stepOneData, currentStep, completedSteps])
+
+  }, [isConnected, stepOneData, validationData, currentStep, completedSteps])
+
 
   const handleStepOneComplete = (data: any) => {
     setStepOneData(data)
     setCompletedSteps((prev) => new Set([...prev, 2]))
-    setCurrentStep(3) // Skip to step 3 (Send & Add Hash)
+
+    setCurrentStep(3)
   }
 
-  const handleNext = () => {
-    const currentStepData = steps.find((s) => s.number === currentStep)
-    if (currentStepData?.canProceed && currentStep < 5) {
-      setCompletedSteps((prev) => new Set([...prev, currentStep]))
-      setCurrentStep(currentStep + 1)
-    }
-  }
+  const handleValidationComplete = (data: any) => {
+    setValidationData(data)
+    setCompletedSteps((prev) => new Set([...prev, 3]))
+    setCurrentStep(4)
 
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
-    }
   }
 
   const handleStepClick = (stepNumber: number) => {
@@ -187,20 +179,23 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
                 <Wallet className="h-5 w-5" />
                 Step 1: Connect Your Wallet
               </CardTitle>
-              <CardDescription>Connect your EVM wallet to begin the admin-assisted mint process</CardDescription>
+
+              <CardDescription>Connect your EVM wallet to begin the mint process</CardDescription>
+
             </CardHeader>
             <CardContent>
               <Alert className="mb-4">
                 <Info className="h-4 w-4" />
-                <AlertDescription>
-                  This is an admin-assisted process. An admin will help you mint tokens by guiding you through each
-                  step.
-                </AlertDescription>
+
+                <AlertDescription>Connect your wallet to start the zero-knowledge minting process.</AlertDescription>
+
               </Alert>
 
               {isConnected ? (
                 <div className="text-center py-8">
-                  <CheckCircle className="h-12 w-12 mx-auto text-green-600 mb-4" />
+
+                  <Check className="h-12 w-12 mx-auto text-green-600 mb-4" />
+
                   <h3 className="text-lg font-semibold mb-2">Wallet Connected!</h3>
                   <p className="text-muted-foreground mb-4">Your wallet is successfully connected.</p>
                   <Button onClick={() => setCurrentStep(2)}>
@@ -239,49 +234,44 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
         )
 
       case 3:
-      case 4:
-      case 5:
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {currentStep === 3 && <QrCode className="h-5 w-5" />}
-                {currentStep === 4 && <CheckCircle className="h-5 w-5" />}
-                {currentStep === 5 && <Send className="h-5 w-5" />}
-                {currentStep === 3 && "Step 3: Send Tokens & Add Transaction Hash"}
-                {currentStep === 4 && "Step 4: Validate Transaction"}
-                {currentStep === 5 && "Step 5: Submit Request"}
-              </CardTitle>
-              <CardDescription>
-                {currentStep === 3 && "Send tokens using QR code and provide your transaction hash"}
-                {currentStep === 4 && "Validate your transaction details"}
-                {currentStep === 5 && "Submit your mint request for admin approval"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Alert className="mb-4 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
-                <AlertTriangle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800 dark:text-blue-200">
-                  <strong>Admin-Assisted Process:</strong> Follow the instructions below carefully. An admin will guide
-                  you through sending tokens to the vault address and completing the validation.
-                </AlertDescription>
-              </Alert>
 
-              {stepOneData ? (
-                <MintStepTwo formData={stepOneData} onComplete={onComplete} onBack={() => setCurrentStep(2)} />
-              ) : (
-                <div className="text-center py-8">
-                  <AlertTriangle className="h-12 w-12 mx-auto text-orange-500 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Form Data Missing</h3>
-                  <p className="text-muted-foreground mb-4">Please go back and complete the form first.</p>
-                  <Button variant="outline" onClick={() => setCurrentStep(2)}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Form
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        return stepOneData ? (
+          <MintStepThree
+            formData={stepOneData}
+            onComplete={handleValidationComplete}
+            onBack={() => setCurrentStep(2)}
+          />
+        ) : (
+          <div className="text-center py-8">
+            <AlertTriangle className="h-12 w-12 mx-auto text-orange-500 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Form Data Missing</h3>
+            <p className="text-muted-foreground mb-4">Please go back and complete the form first.</p>
+            <Button variant="outline" onClick={() => setCurrentStep(2)}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Form
+            </Button>
+          </div>
+        )
+
+      case 4:
+        return stepOneData && validationData ? (
+          <MintStepFour
+            formData={stepOneData}
+            validationData={validationData}
+            onBack={() => setCurrentStep(3)}
+            onComplete={onComplete}
+          />
+        ) : (
+          <div className="text-center py-8">
+            <AlertTriangle className="h-12 w-12 mx-auto text-orange-500 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Validation Required</h3>
+            <p className="text-muted-foreground mb-4">Please complete validation first.</p>
+            <Button variant="outline" onClick={() => setCurrentStep(3)}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Validation
+            </Button>
+          </div>
+
         )
 
       default:
@@ -299,7 +289,9 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
         <Progress value={getProgressPercentage()} className="h-2" />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
         {steps.map((step) => (
           <div key={step.number} className="text-center">
             <Button
@@ -319,24 +311,8 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
         ))}
       </div>
 
-      {/* Step Content */}
       {renderStepContent()}
 
-      {currentStep > 1 && currentStep < 3 && (
-        <div className="flex justify-between items-center">
-          <Button variant="outline" onClick={handleBack} disabled={currentStep <= 1}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Previous
-          </Button>
-          <div className="text-sm text-muted-foreground">
-            Step {currentStep} of {steps.length}
-          </div>
-          <Button onClick={handleNext} disabled={!steps.find((s) => s.number === currentStep)?.canProceed}>
-            Next
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
-      )}
 
       <div className="text-center text-sm text-muted-foreground">
         <p>

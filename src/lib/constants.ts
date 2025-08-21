@@ -51,6 +51,7 @@ export const VAULTS = [
     explorerUrl: "https://sochain.com/tx/DOGETEST",
     evmChain: sepolia.name, // Added
     evmChainId: sepolia.id, // Added
+    evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
   },
   {
     id: "tltc",
@@ -68,6 +69,7 @@ export const VAULTS = [
     explorerUrl: "https://sochain.com/testnet/ltc",
     evmChain: sepolia.name, // Added
     evmChainId: sepolia.id, // Added
+    evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
   },
   {
     id: "tbch",
@@ -85,6 +87,7 @@ export const VAULTS = [
     explorerUrl: "https://www.blocktrail.com/tBCC",
     evmChain: sepolia.name, // Added
     evmChainId: sepolia.id, // Added
+    evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
   },
 ]
 export const DEFAULT_INSTITUTIONAL_NATIVE_ADDRESS = "INSTITUTIONAL_DEFAULT_ADDRESS_PLACEHOLDER"; // Placeholder for institutional default address
