@@ -40,7 +40,9 @@ export default function NewMintRequest() {
     { number: 3, title: "Send Token", icon: QrCode, description: "Send to vault address via QR or copy" },
     { number: 4, title: "Wait & Copy", icon: Clock, description: "Wait for confirmation and copy tx hash" },
     { number: 5, title: "Validate", icon: CheckCircle, description: "Validate transaction details" },
+
     { number: 6, title: "Submit", icon: Send, description: "Mint" },
+
   ]
 
   return (
@@ -52,7 +54,9 @@ export default function NewMintRequest() {
           Back to Dashboard
         </Button>
         <div>
+
           <h1 className="text-3xl font-bold">Retail Mint Request</h1>
+
           <p className="text-muted-foreground">Follow the 6-step process to submit your retail mint request</p>
         </div>
       </div>
@@ -87,6 +91,7 @@ export default function NewMintRequest() {
           </Button>
         </Link>
         <div className="text-sm text-muted-foreground">Retail Mint Flow</div>
+
       </div>
     </div>
   )

@@ -16,6 +16,7 @@ import { ValidationStepGuide } from "@/components/ValidationStepsGuide"
 import { MintVault } from "@/components/mint-vault"
 import { useAccount } from "wagmi"
 
+
 interface Props {
   formData: MintFormData
   onBack: () => void
@@ -45,6 +46,7 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
       })
       return
     }
+
 
     setIsValidating(true)
     setValidationResult(null)
@@ -76,10 +78,12 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
           ownerAddress: address,
           txHash: txHash.trim(),
           proofSystem: "plonk",
+
         }),
       })
 
       const data = await response.json()
+
 
       if (!response.ok) {
         throw new Error(data?.error || "Failed to generate proof")
@@ -105,6 +109,7 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
       setValidationResult({ error: error.message })
       setCanSubmit(false)
       toast({
+
         title: "Validation Failed",
         description:
           error.message || "Failed to validate transaction. Please check your transaction hash and try again.",
@@ -167,6 +172,7 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
               </AlertDescription>
             </Alert>
 
+
             <div className="space-y-2">
               <Label htmlFor="txHash">Transaction Hash</Label>
               <Input
@@ -193,19 +199,23 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
       )}
 
       <div className="flex flex-col sm:flex-row gap-2">
+
         <Button variant="outline" onClick={onBack} disabled={isValidating}>
           Back to Form
         </Button>
         <Button onClick={validateHash} disabled={!txHash || isValidating} className="flex-1">
+
           {isValidating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           Step 4: Validate Transaction
         </Button>
         <Button
+
           onClick={handleProceedToVault}
           disabled={!canSubmit}
           className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Step 5: Proceed to Vault
+
           {!canSubmit && !isValidating && " (Validate First)"}
         </Button>
       </div>
@@ -236,7 +246,9 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
                 : "Proof Generation Failed"}
             </strong>
             {validationResult.totalDoge || validationResult.proof
+
               ? ` Your Dogecoin transaction (${(validationResult.totalDoge / 100000000).toFixed(8)} DOGE) has been cryptographically proven and is ready for minting.`
+
               : ` ${validationResult.error || "Please check your transaction hash and try again."}`}
           </AlertDescription>
         </Alert>
@@ -246,6 +258,8 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
         isOpen={isValidating}
         onClose={() => {}} // Prevent manual closing during validation
       />
+
+
     </div>
   )
 }

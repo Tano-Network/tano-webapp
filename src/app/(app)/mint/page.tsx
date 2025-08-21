@@ -29,6 +29,7 @@ import { UserGuide } from "@/components/UserGuide"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
+
 interface MintRequest {
   id: string
   evmAddress: string
@@ -167,7 +168,9 @@ export default function MintDashboard() {
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString()
   const formatDateTime = (dateString: string) => new Date(dateString).toLocaleString()
 
+
   const MintRecordTable = ({
+
     requests,
     title,
     isUserTable = false,
@@ -175,6 +178,7 @@ export default function MintDashboard() {
     <Card
       className={isUserTable ? "border-2 border-blue-200 bg-blue-50/30 dark:border-blue-800 dark:bg-blue-950/30" : ""}
     >
+
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -262,7 +266,9 @@ export default function MintDashboard() {
                 {requests.map((request) => {
                   const vault = getVaultInfo(request.vaultId)
                   return (
+
                     <TableRow key={request.id} className={isUserTable ? "bg-blue-50/50 dark:bg-blue-950/50" : ""}>
+
                       {/* Vault */}
                       <TableCell>
                         <div className="flex items-center gap-2">

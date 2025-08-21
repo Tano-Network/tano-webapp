@@ -6,10 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
+
 import { Wallet, FileText, QrCode, Vault, ArrowRight, ArrowLeft, Info, AlertTriangle, Check } from "lucide-react"
 import { MintStepOne } from "@/components/mint-step-one"
 import { MintStepThree } from "@/components/mint-step-three"
 import { MintStepFour } from "@/components/mint-step-four"
+
 
 interface Props {
   onComplete: () => void
@@ -29,7 +31,9 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
   const { isConnected } = useAccount()
   const [currentStep, setCurrentStep] = useState(1)
   const [stepOneData, setStepOneData] = useState<any>(null)
+
   const [validationData, setValidationData] = useState<any>(null)
+
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
 
   const [steps, setSteps] = useState<StepData[]>([
@@ -53,18 +57,22 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
     },
     {
       number: 3,
+
       title: "Validate Transaction",
       icon: QrCode,
       description: "Send tokens and validate transaction",
+
       status: "pending",
       isValid: false,
       canProceed: false,
     },
     {
       number: 4,
+
       title: "Mint Tokens",
       icon: Vault,
       description: "Execute smart contract minting",
+
       status: "pending",
       isValid: false,
       canProceed: false,
@@ -90,6 +98,7 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
               canProceed: !!stepOneData,
             }
           case 3:
+
             return {
               ...step,
               status: validationData
@@ -108,17 +117,21 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
               status: currentStep === 4 ? "current" : validationData ? "pending" : "disabled",
               isValid: completedSteps.has(4),
               canProceed: !!validationData,
+
             }
           default:
             return step
         }
       }),
     )
+
   }, [isConnected, stepOneData, validationData, currentStep, completedSteps])
+
 
   const handleStepOneComplete = (data: any) => {
     setStepOneData(data)
     setCompletedSteps((prev) => new Set([...prev, 2]))
+
     setCurrentStep(3)
   }
 
@@ -126,6 +139,7 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
     setValidationData(data)
     setCompletedSteps((prev) => new Set([...prev, 3]))
     setCurrentStep(4)
+
   }
 
   const handleStepClick = (stepNumber: number) => {
@@ -165,17 +179,23 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
                 <Wallet className="h-5 w-5" />
                 Step 1: Connect Your Wallet
               </CardTitle>
+
               <CardDescription>Connect your EVM wallet to begin the mint process</CardDescription>
+
             </CardHeader>
             <CardContent>
               <Alert className="mb-4">
                 <Info className="h-4 w-4" />
+
                 <AlertDescription>Connect your wallet to start the zero-knowledge minting process.</AlertDescription>
+
               </Alert>
 
               {isConnected ? (
                 <div className="text-center py-8">
+
                   <Check className="h-12 w-12 mx-auto text-green-600 mb-4" />
+
                   <h3 className="text-lg font-semibold mb-2">Wallet Connected!</h3>
                   <p className="text-muted-foreground mb-4">Your wallet is successfully connected.</p>
                   <Button onClick={() => setCurrentStep(2)}>
@@ -214,6 +234,7 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
         )
 
       case 3:
+
         return stepOneData ? (
           <MintStepThree
             formData={stepOneData}
@@ -250,6 +271,7 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
               Back to Validation
             </Button>
           </div>
+
         )
 
       default:
@@ -267,7 +289,9 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
         <Progress value={getProgressPercentage()} className="h-2" />
       </div>
 
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
         {steps.map((step) => (
           <div key={step.number} className="text-center">
             <Button
@@ -288,6 +312,7 @@ export function AdminAssistedMintWizard({ onComplete }: Props) {
       </div>
 
       {renderStepContent()}
+
 
       <div className="text-center text-sm text-muted-foreground">
         <p>
