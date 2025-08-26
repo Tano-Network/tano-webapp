@@ -50,7 +50,7 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
 
       if (duplicateCheckResponse.ok) {
         const { records } = await duplicateCheckResponse.json()
-        const existingRecord = records.find((record: any) => record.nativeTxHash === txHash.trim())
+        const existingRecord = records.find((record: any) => record.native_hash === txHash.trim())
 
         if (existingRecord) {
           throw new Error(

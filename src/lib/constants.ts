@@ -19,6 +19,9 @@ export const CONTRACT_ADDRESSES = {
     TBCH_TOKEN: "0x0000000000000000000000000000000000000000",
     TBCH_STAKING_POOL: "0x0000000000000000000000000000000000000000",
     TBCH_ASSET_MANAGEMENT: "0x0000000000000000000000000000000000000000",
+    TXRP_TOKEN: "0x0000000000000000000000000000000000000000",
+    TXRP_STAKING_POOL: "0x0000000000000000000000000000000000000000",
+    TXRP_ASSET_MANAGEMENT: "0x0000000000000000000000000000000000000000",
   },
   // Add other networks as needed
 } satisfies Record<number, Record<string, `0x${string}`>>;
@@ -48,7 +51,7 @@ export const VAULTS = [
     color: "from-yellow-500 to-orange-500",
     description: "Redeem DOGE from your tDOGE balance on the Dogecoin testnet.",
     coinGeckoId: "dogecoin",
-    explorerUrl: "https://sochain.com/tx/DOGETEST",
+    explorerUrl: "https://sochain.com/tx/DOGE",
     evmChain: sepolia.name, // Added
     evmChainId: sepolia.id, // Added
     evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
@@ -89,5 +92,23 @@ export const VAULTS = [
     evmChainId: sepolia.id, // Added
     evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
   },
+  // {
+  //   id: "txrp",
+  //   name: "tXRP Vault",
+  //   asset: "tXRP",
+  //   coin: "XRP",
+  //   tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
+  //   assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_ASSET_MANAGEMENT,
+  //   nativeChainName: "XRP Testnet",
+  //   nativeAddress: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe", // Example faucet/test address
+  //   icon: "https://assets.coingecko.com/coins/images/44/thumb/xrp-symbol-white-128.png",
+  //   color: "from-blue-400 to-indigo-600",
+  //   description: "Redeem XRP from your tXRP balance on the XRP testnet.",
+  //   coinGeckoId: "ripple",
+  //   explorerUrl: "https://testnet.xrpl.org/transactions/",
+  //   evmChain: sepolia.name,
+  //   evmChainId: sepolia.id,
+  //   evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA],
+  // },
 ]
 export const DEFAULT_INSTITUTIONAL_NATIVE_ADDRESS = "INSTITUTIONAL_DEFAULT_ADDRESS_PLACEHOLDER"; // Placeholder for institutional default address
