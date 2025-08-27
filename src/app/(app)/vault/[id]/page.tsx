@@ -37,6 +37,9 @@ import {
   EXPLORER_URLS,
   SUPPORTED_CHAINS,
 } from "@/lib/constants";
+import { Loader2 } from "lucide-react";
+import { CheckCircle2, ExternalLink } from "lucide-react";
+
 
 type VaultKey = "doge" | "litecoin" | "bitcoin_cash";
 

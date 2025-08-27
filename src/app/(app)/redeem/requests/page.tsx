@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { BackButton } from "@/components/BackButton"
 import Link from "next/link"
+import { RefreshCw, ExternalLink, Clock, CheckCircle, XCircle } from "lucide-react"
 
 interface RedeemRequest {
   id: string

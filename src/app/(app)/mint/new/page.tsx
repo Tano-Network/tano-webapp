@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/BackButton"
 import Link from "next/link"
 import { AdminAssistedMintWizard } from "@/components/AdminAssistedMintWizard"
-
+import { Wallet, FileText, QrCode, Clock, CheckCircle, Send } from "lucide-react"
+ 
 function MintWizardLoading() {
   return (
     <div className="flex items-center justify-center py-12">

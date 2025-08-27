@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import type React from "react"
-
+import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { ArrowRight, Users, Building2, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"

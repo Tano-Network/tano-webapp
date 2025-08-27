@@ -269,7 +269,7 @@ export default function InstitutionalDashboardPage() {
                   }),
                   readContract(config, {
                     address: vault.tokenAddress as `0x${string}`,
-                    abi: vault.tokenAbi,
+                    abi: assetAbi,
                     functionName: "totalSupply",
                   }),
                 ]);
@@ -408,7 +408,7 @@ export default function InstitutionalDashboardPage() {
                       <TableCell>
                         <Badge variant="default">Whitelisted</Badge>
                       </TableCell>
-                      <TableCell>{parseFloat(formatUnits(vault.mintedAmount || BigInt(0), 18)).toFixed(2)}</TableCell>
+                      <TableCell>{parseFloat(formatUnits(vault.mintableAmount || BigInt(0), 18)).toFixed(2)}</TableCell>
                       <TableCell>{parseFloat(formatUnits(vault.mintableAmount || BigInt(0), 18)).toFixed(2)}</TableCell>
                       <TableCell>{parseFloat(formatUnits(vault.allowance || BigInt(0), 18)).toFixed(2)}</TableCell>
                       <TableCell>

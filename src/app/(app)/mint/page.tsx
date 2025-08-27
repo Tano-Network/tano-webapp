@@ -24,6 +24,7 @@ import {
 import { VAULTS } from "@/lib/constants"
 import Link from "next/link"
 import { BackButton } from "@/components/BackButton"
+import { UserGuide } from "@/components/UserGuide"
 
 // ⬇ Added imports for dialog & scroll area
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"

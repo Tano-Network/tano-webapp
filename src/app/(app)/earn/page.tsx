@@ -2,6 +2,7 @@
 import { BackButton } from "@/components/BackButton";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/router";
 import {
   Lock,
   Coins,

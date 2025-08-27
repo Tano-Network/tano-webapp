@@ -15,6 +15,7 @@ import assetAbi from "@/abi/asset.json"
 import assetManagementAbi from "@/abi/assetManagement.json"
 import { getCoinPrices } from "@/app/actions/get-prices"
 import { BackButton } from "@/components/BackButton"
+import {LoadingSpinner} from "@/components/LoadingSpinner"
 
 // Extend Vault with ABIs and price ID
 const REDEEMABLE_VAULTS = VAULTS.map((vault) => ({
