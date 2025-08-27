@@ -53,27 +53,6 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        gray: {
-          950: '#030712',
-          900: '#111827',
-          800: '#1f2937',
-          700: '#374151',
-          600: '#4b5563',
-          500: '#6b7280',
-          400: '#9ca3af',
-          300: '#d1d5db',
-          200: '#e5e7eb',
-          100: '#f3f4f6',
-          50: '#f9fafb',
-        },
-        indigo: {
-          600: '#4f46e5',
-          500: '#6366f1',
-          400: '#818cf8',
-        },
-        purple: {
-          500: '#a855f7',
-        }
       },
       borderRadius: {
         lg: "var(--radius)",

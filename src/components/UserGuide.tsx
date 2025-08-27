@@ -69,11 +69,20 @@ const guideContent: Record<GuideType, GuideContent> = {
         description: "Paste the transaction hash into the mint request form and submit for processing.",
         tips: ["Ensure the hash is correct", "Check for typos before submission"],
       },
+      {
+        title: "Add Token to MetaMask",
+        description: "After successful minting, add the newly minted token to your MetaMask wallet for easy tracking.",
+        tips: ["Ensure you are on the correct network (Sepolia Testnet)", "Use the 'Add Token' feature in MetaMask and paste the token contract address"],
+      },
     ],
     additionalInfo: [
       {
         title: "What is a Vault?",
         content: "A vault is a secure contract address where assets are stored before minting tokens.",
+      },
+      {
+        title: "Why Validate?",
+        content: "Validation ensures the transaction is legitimate and linked to the correct user.",
       },
       {
         title: "Why Validate?",

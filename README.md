@@ -16,6 +16,7 @@ Tano Finance is a decentralized finance platform built with Next.js, React, and 
 * [Testing](#testing)
 * [Deployment](#deployment)
 * [Security](#security)
+* [Theming](#theming)
 * [Contributing](#contributing)
 * [License](#license)
 
@@ -73,7 +74,7 @@ The project uses the following components:
 * `Sidebar`: A sidebar component for displaying navigation.
 * `Chart`: A chart component for displaying data.
 * `Drawer`: A drawer component for displaying content.
-* [Toast](cci:1://file:///d:/t1/tano-webapp/src/components/ui/use-toast.ts:173:0-191:1): A toast component for displaying notifications.
+* `Toast`: A toast component for displaying notifications.
 * `Alert`: An alert component for displaying warnings.
 
 ## Libraries
@@ -114,4 +115,84 @@ The project depends on the following dependencies:
 * `@tanstack/react-query`: A library for managing data fetching and caching.
 * `wagmi`: A library for interacting with the Ethereum blockchain.
 * `ethers`: A library for interacting with the Ethereum blockchain.
-* `react-resizable-panels`: A library for
+* `react-resizable-panels`: A library for creating resizable panels.
+
+## Theming
+
+This project implements dark and light mode theming using `next-themes` and Tailwind CSS. The theme is applied globally and also integrated with RainbowKit for a consistent user experience.
+
+### How Theming Works
+
+1.  **`next-themes` Integration**: The `ThemeProvider` component from `next-themes` is used in `src/app/layout.tsx` to manage the theme state. It's configured to use the `class` attribute on the `<html>` element to apply themes (e.g., `<html class="dark">`). The `defaultTheme` is set to `dark`, and `enableSystem` allows the theme to follow the user's system preferences.
+
+    ```tsx
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem
+      disableTransitionOnChange
+    >
+      {/* ... children components ... */}
+    </ThemeProvider>
+    ```
+
+2.  **Tailwind CSS**: Tailwind CSS is configured to use the `class` strategy for dark mode (`darkMode: ['class']` in `tailwind.config.ts`). CSS variables are defined in `src/app/globals.css` within `:root` (for light theme) and `.dark` (for dark theme) selectors. These variables control the colors of various UI elements.
+
+    ```css
+    /* src/app/globals.css */
+    @layer base {
+      :root { /* Light theme variables */ }
+      .dark { /* Dark theme variables */ }
+    }
+    ```
+
+3.  **RainbowKit Integration**: The RainbowKit wallet connect components are themed using RainbowKit's built-in `darkTheme` and `lightTheme` functions. The `RainbowKitThemeProvider` (located in `src/components/RainbowKitProvider.tsx`) uses the `useTheme` hook from `next-themes` to determine the current theme (`resolvedTheme`) and applies the corresponding RainbowKit theme.
+
+    To prevent unnecessary re-renders, the theme object is memoized using `React.useMemo`.
+
+    ```tsx
+    // src/components/RainbowKitProvider.tsx
+    function RainbowKitThemeProvider({ children }: { children: React.ReactNode }) {
+      const { resolvedTheme } = useTheme()
+
+      const rainbowTheme = useMemo(() => 
+        resolvedTheme === "dark"
+          ? darkTheme({ /* customization options */ })
+          : lightTheme({ /* customization options */ })
+      , [resolvedTheme])
+
+      return (
+        <RainbowKitProvider theme={rainbowTheme} coolMode>
+          {children}
+        </RainbowKitProvider>
+      )
+    }
+    ```
+
+### Common Issues and Solutions
+
+*   **Theme Not Applying Correctly**: Ensure that the `ThemeProvider` from `next-themes` is wrapping all components that need to access the theme context. Specifically, `Web3Providers` (which contains `RainbowKitThemeProvider`) must be a child of `ThemeProvider` in `src/app/layout.tsx`.
+
+    **Incorrect Order (before fix)**:
+    ```tsx
+    <Web3Providers>
+      <ThemeProvider>{/* ... */}</ThemeProvider>
+    </Web3Providers>
+    ```
+
+    **Correct Order (after fix)**:
+    ```tsx
+    <ThemeProvider>
+      <Web3Providers>{/* ... */}</Web3Providers>
+    </ThemeProvider>
+    ```
+
+*   **Re-render Issues**: If you experience excessive re-renders related to theme changes, ensure that the theme object passed to `RainbowKitProvider` is memoized using `React.useMemo` as shown in the `RainbowKitThemeProvider` example above.
+
+## Contributing
+
+(Existing content)
+
+## License
+
+(Existing content)

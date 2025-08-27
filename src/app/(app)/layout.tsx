@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation"
 import { X, Menu, Wallet, TrendingUp, ArrowRight, TrendingDown, Building2, Hammer } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { RainbowConnectButton } from "@/components/RainbowConnectButton"
+import { VaultBalanceDropdown } from "@/components/VaultBalanceDropdown"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -15,6 +16,7 @@ import { useAccount } from "wagmi"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { PageTransition } from "@/components/PageTransition"
 import { UserTypeProvider, useUserType } from "@/contexts/UserTypeContexts"
+
 
 /**
  * A skeleton component that is used to render a placeholder for the app header
@@ -164,7 +166,8 @@ function AppHeader() {
               </Button>
             )}
 
-            <div className="hidden sm:block">
+            <div className="flex items-center gap-2">
+              <VaultBalanceDropdown />
               <RainbowConnectButton />
             </div>
             <ThemeToggle />
@@ -173,7 +176,7 @@ function AppHeader() {
               size="icon"
               className="md:hidden hover:scale-105 transition-transform"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
+>
               <div className="relative w-5 h-5">
                 <Menu
                   size={20}
@@ -249,7 +252,10 @@ function AppHeader() {
               </Link>
             )
           })}
-          <div className="pt-2 border-t border-border/50">
+          <div className="pt-2 border-t border-border/50 flex items-center gap-2">
+            <VaultBalanceDropdown />
+            <div/>
+            <div className="flex-1" />
             <RainbowConnectButton />
           </div>
         </div>
@@ -335,7 +341,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Suspense fallback={<AppHeaderSkeleton />}>
           <AppHeader />
         </Suspense>
-        <main className="flex-1 relative">
+        <main className="flex-1 relative p-4">
+          
           <WalletGuard>
             <PageTransition>{children}</PageTransition>
           </WalletGuard>

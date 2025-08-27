@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
-import { RefreshCw, ExternalLink, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft } from "lucide-react"
+import { BackButton } from "@/components/BackButton"
 import Link from "next/link"
 
 interface RedeemRequest {
@@ -169,12 +169,7 @@ export default function RedeemRequestsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-6">
-        <Button variant="ghost" asChild className="mb-4">
-          <Link href="/redeem">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Redeem
-          </Link>
-        </Button>
+        <BackButton href="/redeem">Back to Redeem</BackButton>
 
         <div className="flex items-center justify-between">
           <div>

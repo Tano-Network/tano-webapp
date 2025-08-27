@@ -5,7 +5,7 @@ import { parseUnits, formatUnits } from "viem";
 import { useAccount, useChainId, useWriteContract } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import Link from "next/link";
-import { CheckCircle2, ExternalLink, ArrowLeft, Loader2 } from "lucide-react";
+import { BackButton } from "@/components/BackButton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -381,12 +381,7 @@ export default function VaultDepositPage({
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
-      <Button asChild variant="outline" className="mb-6 bg-transparent">
-        <Link href="/vault">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Vaults
-        </Link>
-      </Button>
+      <BackButton href="/vault">Back to Vaults</BackButton>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Mint Card */}

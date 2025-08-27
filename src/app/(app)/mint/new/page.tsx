@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation"
 import { Suspense } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Wallet, FileText, QrCode, Clock, CheckCircle, Send } from "lucide-react"
+import { BackButton } from "@/components/BackButton"
 import Link from "next/link"
 import { AdminAssistedMintWizard } from "@/components/AdminAssistedMintWizard"
 
@@ -49,10 +49,7 @@ export default function NewMintRequest() {
     <div className="container mx-auto p-6 max-w-5xl">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Button onClick={handleBack} variant="outline" size="sm" className="gap-2 bg-transparent">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
-        </Button>
+        <BackButton href="/mint">Back to Dashboard</BackButton>
         <div>
 
           <h1 className="text-3xl font-bold">Retail Mint Request</h1>
@@ -84,12 +81,7 @@ export default function NewMintRequest() {
 
       {/* Navigation Footer */}
       <div className="flex justify-between items-center mt-6">
-        <Link href="/mint">
-          <Button variant="outline" className="gap-2 bg-transparent">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Button>
-        </Link>
+        <BackButton href="/mint">Back to Dashboard</BackButton>
         <div className="text-sm text-muted-foreground">Retail Mint Flow</div>
 
       </div>

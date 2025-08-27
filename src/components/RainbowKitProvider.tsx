@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useState, useEffect } from "react"
 import type * as React from "react"
 import { RainbowKitProvider, darkTheme, lightTheme, getDefaultConfig } from "@rainbow-me/rainbowkit"
 import { WagmiProvider, http } from "wagmi"
@@ -27,10 +28,13 @@ const queryClient = new QueryClient({
 })
 
 function RainbowKitThemeProvider({ children }: { children: React.ReactNode }) {
-  const { theme } = useTheme()
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
-  const rainbowTheme =
-    theme === "dark"
+  useEffect(() => setMounted(true), [])
+
+  const rainbowTheme = useMemo(() =>
+    resolvedTheme === "dark"
       ? darkTheme({
           accentColor: "#8B5CF6",
           accentColorForeground: "white",
@@ -45,6 +49,9 @@ function RainbowKitThemeProvider({ children }: { children: React.ReactNode }) {
           fontStack: "system",
           overlayBlur: "small",
         })
+  , [resolvedTheme])
+
+  if (!mounted) return null // avoid hydration mismatch
 
   return (
     <RainbowKitProvider theme={rainbowTheme} coolMode>

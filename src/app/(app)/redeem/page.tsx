@@ -14,7 +14,7 @@ import { formatAddress } from "@/lib/web3"
 import assetAbi from "@/abi/asset.json"
 import assetManagementAbi from "@/abi/assetManagement.json"
 import { getCoinPrices } from "@/app/actions/get-prices"
-import { LoadingSpinner } from "@/components/LoadingSpinner"
+import { BackButton } from "@/components/BackButton"
 
 // Extend Vault with ABIs and price ID
 const REDEEMABLE_VAULTS = VAULTS.map((vault) => ({
@@ -109,6 +109,9 @@ export default function RedeemDashboardPage() {
   return (
     <div className="flex flex-col gap-4 p-4 lg:gap-6 lg:p-6">
       <h1 className="text-lg font-semibold md:text-2xl">Redeem Dashboard</h1>
+      <div className="mb-4">
+        <BackButton />
+      </div>
 
       {!isConnected ? (
         <Card className="text-center py-8">

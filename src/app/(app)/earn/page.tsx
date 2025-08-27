@@ -1,5 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { BackButton } from "@/components/BackButton";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -111,6 +111,27 @@ const initialEarnPools: EarnPool[] = [
         : "coming-soon",
     description: "Stake your tBCH to earn rewards",
     coinGeckoId: "bitcoin-cash",
+  },
+  {
+    id: "ripple",
+    asset: "tXRP",
+    icon: "X",
+    contractAddress:
+      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_STAKING_POOL,
+    stakingTokenAddress:
+      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
+    decimals: 18, // Assuming 18 decimals for tXRP
+    totalStaked: "0.00",
+    apy: "0.0%",
+    myDeposit: "0.00",
+    color: "from-blue-400 to-indigo-600",
+    status:
+      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_STAKING_POOL !==
+      ZeroAddress
+        ? "active"
+        : "coming-soon",
+    description: "Stake your tXRP to earn rewards",
+    coinGeckoId: "ripple",
   },
 ];
 
@@ -485,6 +506,8 @@ export default function EarnDashboardPage() {
     else if (pool.coinGeckoId === "litecoin") price = coinPrices.litecoin;
     else if (pool.coinGeckoId === "bitcoin-cash")
       price = coinPrices.bitcoin_cash;
+    else if (pool.coinGeckoId === "ripple")
+      price = coinPrices.ripple;
 
     return sum + stakedAmount * price;
   }, 0);
@@ -496,6 +519,8 @@ export default function EarnDashboardPage() {
     earnPoolsData.find((p) => p.id === "litecoin")?.totalStaked || "0.00";
   const totalStakedBCH =
     earnPoolsData.find((p) => p.id === "bitcoin_cash")?.totalStaked || "0.00";
+  const totalStakedXRP =
+    earnPoolsData.find((p) => p.id === "ripple")?.totalStaked || "0.00";
 
   // Placeholder for total rewards distributed (needs contract function or historical data)
   const totalRewardsDistributed = "0"; // Keep as placeholder for now
@@ -519,6 +544,9 @@ export default function EarnDashboardPage() {
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
           Earn Dashboard
         </h1>
+        <div className="mb-4">
+          <BackButton />
+        </div>
         <div className="text-muted-foreground text-lg md:text-xl max-w-2xl">
           Stake your assets in various pools to earn passive income
         </div>
@@ -604,6 +632,20 @@ export default function EarnDashboardPage() {
               ) : (
                 <div className="text-2xl font-bold">
                   {Number.parseFloat(totalStakedBCH).toFixed(2)} tBCH
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">tXRP Staked</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingData ? (
+                <Skeleton className="h-8 w-32" />
+              ) : (
+                <div className="text-2xl font-bold">
+                  {Number.parseFloat(totalStakedXRP).toFixed(2)} tXRP
                 </div>
               )}
             </CardContent>

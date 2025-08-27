@@ -9,7 +9,7 @@ interface CoinGeckoPriceResponse {
 export async function getCoinPrices() {
   try {
     const response = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=dogecoin,litecoin,bitcoin-cash&vs_currencies=usd",
+      "https://api.coingecko.com/api/v3/simple/price?ids=dogecoin,litecoin,bitcoin-cash,ripple,cardano&vs_currencies=usd",
       {
         next: { revalidate: 60 * 15 }, // Revalidate every 15 minutes
       }
@@ -24,6 +24,8 @@ export async function getCoinPrices() {
         dogecoin: 0,
         litecoin: 0,
         bitcoin_cash: 0,
+        ripple: 0,
+        cardano: 0,
       };
     }
 
@@ -33,6 +35,8 @@ export async function getCoinPrices() {
       dogecoin: data.dogecoin?.usd || 0,
       litecoin: data.litecoin?.usd || 0,
       bitcoin_cash: data["bitcoin-cash"]?.usd || 0,
+      ripple: data.ripple?.usd || 0,
+      cardano: data.cardano?.usd || 0,
     };
   } catch (error) {
     console.error("Error fetching CoinGecko prices:", error);
@@ -40,6 +44,8 @@ export async function getCoinPrices() {
       dogecoin: 0,
       litecoin: 0,
       bitcoin_cash: 0,
+      ripple: 0,
+      cardano: 0,
     };
   }
 }

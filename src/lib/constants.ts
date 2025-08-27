@@ -10,7 +10,8 @@ export const SUPPORTED_CHAINS = {
 
 export const CONTRACT_ADDRESSES = {
   [SUPPORTED_CHAINS.SEPOLIA]: {
-    TDOGE_ASSET_MANAGEMENT: "0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48",
+    TDOGE_ASSET_MANAGEMENT: "0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48" ,
+    // TDOGE_ASSET_MANAGEMENT: "0x6538cE279184142B72A057cAe5e5b2D475Da0551",
     TDOGE_TOKEN: "0x46507E8929Fe9C20c8914fc9036829F6e7740D9D",
     TDOGE_STAKING_POOL: "0x839D1424D64ad061e9f612a5f9A438fe9619D5B6",
     TLTC_TOKEN: "0xC1819d63807e34bb4a120abF1eF58a6D140964Ec",
@@ -92,23 +93,23 @@ export const VAULTS = [
     evmChainId: sepolia.id, // Added
     evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
   },
-  // {
-  //   id: "txrp",
-  //   name: "tXRP Vault",
-  //   asset: "tXRP",
-  //   coin: "XRP",
-  //   tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
-  //   assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_ASSET_MANAGEMENT,
-  //   nativeChainName: "XRP Testnet",
-  //   nativeAddress: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe", // Example faucet/test address
-  //   icon: "https://assets.coingecko.com/coins/images/44/thumb/xrp-symbol-white-128.png",
-  //   color: "from-blue-400 to-indigo-600",
-  //   description: "Redeem XRP from your tXRP balance on the XRP testnet.",
-  //   coinGeckoId: "ripple",
-  //   explorerUrl: "https://testnet.xrpl.org/transactions/",
-  //   evmChain: sepolia.name,
-  //   evmChainId: sepolia.id,
-  //   evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA],
-  // },
+  {
+    id: "txrp",
+    name: "tXRP Vault",
+    asset: "tXRP",
+    coin: "XRP",
+    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
+    assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_ASSET_MANAGEMENT,
+    nativeChainName: "XRP Testnet",
+    nativeAddress: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe", 
+    icon: "https://assets.coingecko.com/coins/images/44/thumb/xrp-symbol-white-128.png",
+    color: "from-blue-400 to-indigo-600",
+    description: "Redeem XRP from your tXRP balance on the XRP testnet.",
+    coinGeckoId: "ripple",
+    explorerUrl: "https://testnet.xrpl.org/transactions/",
+    evmChain: sepolia.name,
+    evmChainId: sepolia.id,
+    evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA],
+  },
 ]
 export const DEFAULT_INSTITUTIONAL_NATIVE_ADDRESS = "INSTITUTIONAL_DEFAULT_ADDRESS_PLACEHOLDER"; // Placeholder for institutional default address

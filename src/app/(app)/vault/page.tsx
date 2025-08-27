@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { useToast } from "@/hooks/use-toast";
+import { BackButton } from "@/components/BackButton";
 import { cn } from "@/lib/utils";
 import {
   CONTRACT_ADDRESSES,
@@ -100,6 +100,27 @@ const vaults = [
     totalMinted: "0",
     tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
     tokenAbi: assetAbi,
+  },
+  {
+    id: "xrp",
+    asset: "XRP",
+    icon: "X",
+    totalLocked: "0.00 tXRP",
+    apy: "0.0%",
+    minted: "0.00",
+    whitelistContract:
+      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_ASSET_MANAGEMENT,
+    whitelistAbi: assetManagementAbi,
+    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
+    tokenAbi: assetAbi,
+    color: "from-blue-400 to-indigo-600",
+    status:
+      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_ASSET_MANAGEMENT !==
+      ZeroAddress
+        ? "active"
+        : "coming-soon",
+    description: "The digital asset for payments",
+    totalMinted: "0",
   },
 ];
 interface StatCardProps {
@@ -543,6 +564,9 @@ export default function VaultsPage() {
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
           Vaults Dashboard
         </h1>
+        <div className="mb-4">
+          <BackButton />
+        </div>
         <div className="text-muted-foreground text-lg md:text-xl max-w-2xl">
           Deposit your crypto assets and earn yield through our secure, audited
           vaults
@@ -586,21 +610,28 @@ export default function VaultsPage() {
           label="Total t-LTC Minted"
           value={vaults[1].totalMinted}
           description="Available for trading"
-          delay={100}
+          delay={200}
+        />
+        <StatCard
+          icon={<Coins size={20} className="text-primary" />}
+          label="Total t-XRP Minted"
+          value={vaults[3].totalMinted}
+          description="Available for trading"
+          delay={300}
         />
         <StatCard
           icon={<TrendingUp size={20} className="text-primary" />}
           label="Average APY"
           value="10.2%"
           description="Weighted average"
-          delay={200}
+          delay={400}
         />
         <StatCard
           icon={<Shield size={20} className="text-primary" />}
           label="Active Vaults"
           value={vaults.filter((v) => v.status === "active").length.toString()}
           description="On Sepolia testnet"
-          delay={300}
+          delay={500}
         />
       </div>
 

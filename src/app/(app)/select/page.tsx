@@ -7,7 +7,7 @@ import { ArrowRight, Users, Building2, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { BackButton } from "@/components/BackButton"
 
 interface SelectionCardProps {
   title: string
@@ -80,7 +80,7 @@ const SelectionCard = ({
                 animationDuration: "0.3s",
                 animationTimingFunction: "ease-out",
                 animationFillMode: "forwards",
-                animationDelay: `${delay + index * 100}ms`,
+                animationDelay: `${delay + index * 50}ms`,
               }}
             >
               <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 group-hover:scale-125 transition-transform duration-300" />
@@ -118,6 +118,7 @@ export default function SelectPage() {
       )}
     >
       <div className="max-w-6xl mx-auto py-20">
+        <BackButton />
         {/* Header Section */}
         <div className="text-center mb-16">
           <Badge
@@ -168,7 +169,7 @@ export default function SelectPage() {
               "Lower minimum amounts",
             ]}
             icon={<Users size={48} className="text-primary" />}
-            href="/mint"
+            href="/retail-dashboard"
             badge="Most Popular"
             delay={0}
             userType="retail"
@@ -185,7 +186,7 @@ export default function SelectPage() {
               "Dedicated support",
             ]}
             icon={<Building2 size={48} className="text-primary" />}
-            href="/vault"
+            href="/institutional-dashboard"
             badge="Professional"
             delay={200}
             userType="institutional"

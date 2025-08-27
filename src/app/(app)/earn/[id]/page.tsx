@@ -1,6 +1,6 @@
 "use client";
 import { use, useEffect, useState } from "react";
-import { ZeroAddress, Contract } from "ethers";
+import { BackButton } from "@/components/BackButton";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -101,6 +101,16 @@ const getEarnPoolData = (id: string) => {
         CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
       color: "from-green-500 to-emerald-600",
       description: "Stake your tBCH to earn rewards",
+    },
+    ripple: {
+      asset: "tXRP",
+      icon: "X",
+      contractAddress:
+        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_STAKING_POOL,
+      stakingTokenAddress:
+        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
+      color: "from-blue-400 to-indigo-600",
+      description: "Stake your tXRP to earn rewards",
     },
   };
   return (
@@ -765,12 +775,7 @@ export default function EarnPoolPage({
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
-      <Button asChild variant="outline" className="mb-6 bg-transparent">
-        <Link href="/earn">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Earn Pools
-        </Link>
-      </Button>
+      <BackButton href="/earn">Back to Earn Pools</BackButton>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Earn Card */}
