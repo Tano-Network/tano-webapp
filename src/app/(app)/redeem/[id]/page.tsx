@@ -809,17 +809,17 @@ export default function RedeemPage() {
               Redeem Request Submitted Successfully!
             </DialogTitle>
             <DialogDescription className="space-y-3 pt-2">
-              <p>
+              <div>
                 Your redeem request for{" "}
                 <strong>
                   {amount} {vault.asset}
                 </strong>{" "}
                 has been submitted successfully.
-              </p>
-              <p>
+              </div>
+              <div>
                 Native {vault.nativeChainName} tokens will be sent to your
                 address within 7 days.
-              </p>
+              </div>
               {burnTxHash && (
                 <div className="flex items-center gap-2 text-sm">
                   <span>Burn Transaction:</span>

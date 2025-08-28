@@ -24,6 +24,9 @@ interface MintRecord {
   amount: string;
   status: string;
   createdAt: string;
+  transactionHash: string;
+  nativeChainName: string;
+  vaultChain: string;
 }
 
 interface RedeemRequest {
@@ -31,6 +34,7 @@ interface RedeemRequest {
   amount: string;
   status: string;
   createdAt: string;
+  asset: string;
 }
 
 export default function RetailDashboardPage() {
@@ -178,7 +182,11 @@ export default function RetailDashboardPage() {
                   <TableBody>
                     {mintRecords.slice(0, 5).map((record) => (
                       <TableRow key={record.id}>
-                        <TableCell>{parseFloat(record.amount).toFixed(2)}</TableCell>
+                        <TableCell>{parseFloat(record.amount).toFixed(2)}
+                          <div className="text-xs text-muted-foreground">
+                          {record?.nativeChainName || record?.vaultChain}
+                        </div>
+                        </TableCell>
                         <TableCell className="capitalize">{record.status}</TableCell>
                         <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
                       </TableRow>
@@ -215,7 +223,11 @@ export default function RetailDashboardPage() {
                   <TableBody>
                     {redeemRequests.slice(0, 5).map((request) => (
                       <TableRow key={request.id}>
-                        <TableCell>{parseFloat(request.amount).toFixed(2)}</TableCell>
+                        <TableCell>{parseFloat(request.amount).toFixed(2)}
+                          <div className="text-xs text-muted-foreground">
+                          {request?.asset }
+                        </div>
+                        </TableCell>
                         <TableCell className="capitalize">{request.status}</TableCell>
                         <TableCell>{new Date(request.createdAt).toLocaleDateString()}</TableCell>
                       </TableRow>
