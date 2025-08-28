@@ -51,6 +51,7 @@ interface Vault {
   isWhitelisted?: boolean | null;
   mintableAmount?: bigint;
   allowance?: bigint;
+  mintedAmount?: bigint;
 }
 
 // Initial vaults data (copied from vault/page.tsx for now)
@@ -397,7 +398,7 @@ export default function InstitutionalDashboardPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Your Minted</TableHead>
                     <TableHead>Mintable</TableHead>
-                    <TableHead>Allowance</TableHead>
+                    <TableHead>Total Allowance</TableHead>
                     <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -408,9 +409,9 @@ export default function InstitutionalDashboardPage() {
                       <TableCell>
                         <Badge variant="default">Whitelisted</Badge>
                       </TableCell>
+                      <TableCell>{parseFloat(formatUnits(vault.mintedAmount || BigInt(0), 18)).toFixed(2)}</TableCell>
                       <TableCell>{parseFloat(formatUnits(vault.mintableAmount || BigInt(0), 18)).toFixed(2)}</TableCell>
-                      <TableCell>{parseFloat(formatUnits(vault.mintableAmount || BigInt(0), 18)).toFixed(2)}</TableCell>
-                      <TableCell>{parseFloat(formatUnits(vault.allowance || BigInt(0), 18)).toFixed(2)}</TableCell>
+                      <TableCell>{parseFloat(formatUnits(vault.allowance || BigInt(0), 18)).toFixed(2) }</TableCell>
                       <TableCell>
                         <Button asChild size="sm" disabled={vault.status === "coming-soon"}>
                           <Link href={`/vault/${vault.id}`}>Open Vault</Link>

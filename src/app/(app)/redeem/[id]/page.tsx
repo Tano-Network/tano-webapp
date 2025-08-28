@@ -195,6 +195,8 @@ export default function RedeemPage() {
   // Fetch latest mint request for native recipient address
   useEffect(() => {
     const fetchNativeAddress = async () => {
+      console.log("Fetching native address...");
+      console.log("Vault ID:", vaultId);
       if (!isConnected || !address || !vaultId) {
         setNativeAddress("");
         setNativeAddressError("Connect your wallet to fetch address.");

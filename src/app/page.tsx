@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import type React from "react"
-
+import { useRouter } from "next/router";
 import { Layers, TrendingUp, Shield, ChevronsRight, Zap, Users, Globe, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { HomeHeader } from "@/components/HomeHeader"

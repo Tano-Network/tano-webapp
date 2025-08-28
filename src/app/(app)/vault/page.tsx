@@ -36,6 +36,7 @@ import {
   EXPLORER_URLS,
   SUPPORTED_CHAINS,
 } from "@/lib/constants";
+import { useToast } from "@/components/ui/use-toast";
 
 const vaults = [
   {
