@@ -89,7 +89,7 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
 
       const totalAmount = data.totalDoge || data.totalXrp
       const coinSymbol = vault?.coin || ""
-      const decimals = coinSymbol === "DOGE" ? 100000000 : 100000000 
+      const decimals = coinSymbol === "DOGE" ? 100000000 : 1000000 
 
       if (totalAmount && data.senderAddress && data.proof) {
         setValidationResult(data)
