@@ -152,6 +152,46 @@ body {
     --input: 240 4% 16%; /* Dark input border */
     --ring: 260 80% 60%; /* Ring color same as primary */
   }
+
+  .light-purple, .dark-purple {
+    --primary: 260 80% 60%;
+    --ring: 260 80% 60%;
+  }
+
+  .light-blue, .dark-blue {
+    --primary: 210 80% 60%;
+    --ring: 210 80% 60%;
+  }
+
+  .light-green, .dark-green {
+    --primary: 145 63% 49%;
+    --ring: 145 63% 49%;
+  }
+
+  .light-red, .dark-red {
+    --primary: 0 72% 51%;
+    --ring: 0 72% 51%;
+  }
+
+  .light-orange, .dark-orange {
+    --primary: 25 95% 53%;
+    --ring: 25 95% 53%;
+  }
+
+  .light-yellow, .dark-yellow {
+    --primary: 48 96% 50%;
+    --ring: 48 96% 50%;
+  }
+
+  .light-pink, .dark-pink {
+    --primary: 340 82% 52%;
+    --ring: 340 82% 52%;
+  }
+
+  .light-indigo, .dark-indigo {
+    --primary: 263 70% 50%;
+    --ring: 263 70% 50%;
+  }
 }
 
 @layer base {

@@ -35,6 +35,7 @@ import { BackButton } from "@/components/BackButton";
 import { VAULTS, DEFAULT_INSTITUTIONAL_NATIVE_ADDRESS } from "@/lib/constants";
 import Link from "next/link";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useUserType } from "@/contexts/UserTypeContexts";
 
 const ERC20_ABI = [
   {
@@ -85,6 +86,7 @@ export default function RedeemPage() {
   const router = useRouter();
   const { address, isConnected, chainId } = useAccount();
   const { toast } = useToast();
+  const { userType } = useUserType();
   const {
     writeContract,
     data: hash,
@@ -195,6 +197,12 @@ export default function RedeemPage() {
   // Fetch latest mint request for native recipient address
   useEffect(() => {
     const fetchNativeAddress = async () => {
+      if (userType === "institutional") {
+        setNativeAddress(DEFAULT_INSTITUTIONAL_NATIVE_ADDRESS);
+        setIsFetchingNativeAddress(false);
+        return;
+      }
+
       console.log("Fetching native address...");
       console.log("Vault ID:", vaultId);
       if (!isConnected || !address || !vaultId) {
@@ -230,7 +238,7 @@ export default function RedeemPage() {
     };
 
     fetchNativeAddress();
-  }, [isConnected, address, vaultId]);
+  }, [isConnected, address, vaultId, userType]);
 
   // Handle successful burn transaction
   useEffect(() => {
@@ -276,6 +284,7 @@ export default function RedeemPage() {
         burnTxHash: txHash,
         nativeRecipientAddress: nativeAddress,
         status: "pending",
+        userType: userType,
       });
 
       const response = await fetch("/api/redeem", {
@@ -292,6 +301,7 @@ export default function RedeemPage() {
           burnTxHash: txHash,
           nativeRecipientAddress: nativeAddress,
           status: "pending",
+          userType: userType,
         }),
       });
 

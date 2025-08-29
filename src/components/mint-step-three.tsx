@@ -216,7 +216,13 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
         </Alert>
       )}
 
-      <ValidationLoadingModal isOpen={isValidating} onClose={() => {}} />
+      <ValidationLoadingModal
+        isOpen={isValidating}
+        onClose={() => setIsValidating(false)} // Allow closing the modal if validation is stuck
+        vaultId={vault?.id || ""}
+        isValidating={isValidating}
+        validationResult={validationResult}
+      />
     </div>
   )
 }

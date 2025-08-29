@@ -35,7 +35,7 @@ export function ValidationStepGuide({
     {
       step: 2,
       title: "Blockchain Transaction Verification",
-      description: "Verifying transaction exists on Dogecoin blockchain",
+      description: `Verifying transaction exists on ${chainName} blockchain`,
       status: isValidating ? "in-progress" : validationResult ? "completed" : "pending",
       details: "We confirm the transaction exists and retrieve transaction details from the blockchain.",
     },
@@ -44,7 +44,7 @@ export function ValidationStepGuide({
       title: "Cryptographic Proof Generation",
       description: "Generating zero-knowledge proof using PLONK system",
       status: isValidating ? "in-progress" : validationResult ? "completed" : "pending",
-      details: "We generate a cryptographic proof of your Dogecoin transaction using the PLONK proving system.",
+      details: `We generate a cryptographic proof of your ${chainName} transaction using the PLONK proving system.`,
     },
     {
       step: 4,
@@ -241,7 +241,7 @@ export function ValidationStepGuide({
                 {validationResult.error || "Cryptographic proof has been generated for your Dogecoin transaction."}
                 {(validationResult.totalDoge || validationResult.proof) && (
                   <span className="block mt-1 text-sm">
-                    Your Dogecoin transaction proof has been verified and you can now proceed to submit your mint
+                    Your {chainName} transaction proof has been verified and you can now proceed to submit your mint
                     request.
                   </span>
                 )}

@@ -256,7 +256,10 @@ export function MintStepTwo({ formData, onBack, onComplete }: Props) {
 
       <ValidationLoadingModal
         isOpen={isValidating}
-        onClose={() => {}} // Prevent manual closing during validation
+        onClose={() => setIsValidating(false)} // Allow closing the modal if validation is stuck
+        vaultId={vault?.id || ""}
+        isValidating={isValidating}
+        validationResult={validationResult}
       />
 
 

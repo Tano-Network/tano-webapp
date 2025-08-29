@@ -453,6 +453,18 @@ export default function InstitutionalDashboardPage() {
             </Link>
           </Button>
         </Card>
+        <Card className="bg-card p-6 rounded-lg shadow flex flex-col justify-between">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Redeem</h2>
+            <p className="text-muted-foreground">Redeem your tAssets for native tokens.</p>
+          </div>
+          <Button asChild className="mt-4">
+            <Link href="/redeem" className="flex items-center gap-2">
+              Go to Redeem
+              <ArrowRight size={16} />
+            </Link>
+          </Button>
+        </Card>
       </div>
     </div>
   )
