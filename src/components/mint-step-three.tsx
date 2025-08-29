@@ -50,14 +50,17 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
 
       if (duplicateCheckResponse.ok) {
         const { records } = await duplicateCheckResponse.json()
+
         const existingRecord = records.find((record: any) => record.native_hash === txHash.trim())
         console.log("Existing record:", existingRecord)
+
         if (existingRecord) {
           throw new Error(
             "This transaction hash has already been used for minting. Each transaction can only be used once.",
           )
         }
       }
+
 
       let proveApiEndpoint = ""
       switch (vault?.id) {
@@ -75,6 +78,7 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
       }
 
       const response = await fetch(proveApiEndpoint, {
+
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -90,15 +94,18 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
         throw new Error(data?.error || "Failed to generate proof")
       }
 
+
       const totalAmount = data.totalDoge || data.totalXrp || data.totalLovelace
       const coinSymbol = vault?.coin || ""
       const decimals = coinSymbol === "DOGE" ? 100000000 : 1000000 
 
       if (totalAmount && data.senderAddress && data.proof) {
+
         setValidationResult(data)
 
         toast({
           title: "Validation Complete",
+
           description: `Transaction validated! Amount: ${(totalAmount / decimals).toFixed(8)} ${coinSymbol}`,
         })
 
@@ -106,6 +113,7 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
           ...data,
           txHash: txHash.trim(),
           amount: (totalAmount / decimals).toString(),
+
         })
       } else {
         throw new Error("Invalid proof response format")
@@ -158,7 +166,9 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
               <Label htmlFor="txHash">Transaction Hash</Label>
               <Input
                 id="txHash"
+
                 placeholder={`Enter your ${vault?.coin || ""} transaction hash...`}
+
                 value={txHash}
                 onChange={(e) => setTxHash(e.target.value)}
                 className="font-mono text-sm"
@@ -171,7 +181,9 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
 
       {(isValidating || validationResult) && (
         <ValidationStepGuide
+
           chainName={vault?.nativeChainName || ""}
+
           isValidating={isValidating}
           validationResult={validationResult}
           txHash={txHash}
@@ -192,32 +204,41 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
       {validationResult && !isValidating && (
         <Alert
           className={
+
             validationResult.proof
+
               ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950"
               : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950"
           }
         >
+
           {validationResult.proof ? (
+
             <CheckCircle className="h-4 w-4 text-green-600" />
           ) : (
             <AlertTriangle className="h-4 w-4 text-red-600" />
           )}
           <AlertDescription
             className={
+
               validationResult.proof
+
                 ? "text-green-800 dark:text-green-200"
                 : "text-red-800 dark:text-red-200"
             }
           >
             <strong>
+
               {validationResult.proof ? "Validation Complete!" : "Validation Failed"}
             </strong>
             {validationResult.proof
               ? ` Your transaction (${( (validationResult.totalDoge || validationResult.totalXrp) / (vault?.coin === "DOGE" ? 100000000 : 10000000) ).toFixed(8)} ${vault?.coin}) has been validated and is ready for minting.`
+
               : ` ${validationResult.error || "Please check your transaction hash and try again."}`}
           </AlertDescription>
         </Alert>
       )}
+
 
       <ValidationLoadingModal
         isOpen={isValidating}
@@ -229,3 +250,4 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
     </div>
   )
 }
+

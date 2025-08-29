@@ -392,9 +392,11 @@ export default function MintDashboard() {
       <div className="max-w-full mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold">Mint Dashboard</h1>
+
           <div className="mb-4">
             <BackButton />
           </div>
+
           <p className="text-muted-foreground mt-2">View and manage all mint records in the system</p>
         </div>
 

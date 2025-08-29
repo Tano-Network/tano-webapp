@@ -17,6 +17,7 @@ interface Props {
   onComplete: () => void
 }
 
+
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 export function MintStepFour({ formData, validationData, onBack, onComplete }: Props) {
@@ -35,6 +36,7 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
   const handleMintSuccess = async (txHash: string) => {
     if (!txHash) return
 
+
     try {
       // Create mint record with both native tx hash and minting tx hash
       const response = await fetch("/api/mint-records", {
@@ -48,7 +50,9 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
           userAddress: address,
           userAddressNative: validationData.senderAddress,
           nativeTxHash: validationData.txHash,
+
           mintTxHash: txHash,
+
           amount: validationData.amount,
           status: "completed",
           proofData: validationData.proof,
@@ -74,6 +78,7 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
       setIsMinting(false)
     }
   }
+
 
   const {
     data: receipt,
@@ -158,6 +163,7 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
 
   const isContractReady = assetManagementAddress && assetManagementAddress !== ZERO_ADDRESS;
 
+
   return (
     <div className="space-y-6">
       <Card className="border-2 border-purple-200 bg-purple-50/30 dark:border-purple-800 dark:bg-purple-950/30">
@@ -178,11 +184,14 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
             </div>
             <div className="space-y-2">
               <h4 className="font-medium">Mint Details</h4>
+
               <p className="text-sm text-muted-foreground">Amount: {validationData.amount} {vault?.coin}</p>
+
               <p className="text-sm text-muted-foreground">Native Tx: {validationData.txHash.slice(0, 10)}...</p>
               <p className="text-sm text-muted-foreground">Sender: {validationData.senderAddress}</p>
             </div>
           </div>
+
 
           {!isContractReady && (
             <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
@@ -226,9 +235,11 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
                 ) : (
                   mintingError
                 )}
+
               </AlertDescription>
             </Alert>
           )}
+
 
           {isConfirming && (
             <Alert className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
@@ -253,6 +264,7 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800 dark:text-green-200">
                 <strong>Transaction Confirmed!</strong>
+
                 <br />
                 <a
                   href={`${vault?.evmExplorerUrl}/tx/${hash}`}
@@ -275,7 +287,9 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
         </Button>
         <Button
           onClick={handleMint}
+
           disabled={!isContractReady || isMinting || isPending || isConfirming || isConfirmed}
+
           className="flex-1 bg-purple-600 hover:bg-purple-700"
         >
           {(isPending || isConfirming) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -285,7 +299,9 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
               ? "Confirming..."
               : isConfirmed
                 ? "Completed!"
+
                 : mintingError ? "Try Again" : "Mint Tokens"}
+
         </Button>
       </div>
     </div>

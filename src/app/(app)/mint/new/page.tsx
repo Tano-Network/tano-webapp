@@ -82,7 +82,9 @@ export default function NewMintRequest() {
 
       {/* Navigation Footer */}
       <div className="flex justify-between items-center mt-6">
+
         <BackButton href="/mint">Back to Dashboard</BackButton>
+
         <div className="text-sm text-muted-foreground">Retail Mint Flow</div>
 
       </div>

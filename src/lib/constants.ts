@@ -63,6 +63,7 @@ export const VAULTS = [
     evmChain: sepolia.name, // Added
     evmChainId: sepolia.id, // Added
     evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
+
     
   },
   {
@@ -84,6 +85,7 @@ export const VAULTS = [
     evmChain: sepolia.name,
     evmChainId: sepolia.id,
     evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA],
+
   },
   // {
   //   id: "tltc",
@@ -126,6 +128,7 @@ export const VAULTS = [
   //   evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
   // },
   {
+
     id: "txrp",
     name: "tXRP Vault",
     asset: "tXRP",
@@ -144,6 +147,7 @@ export const VAULTS = [
     evmChain: sepolia.name,
     evmChainId: sepolia.id,
     evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA],
+
   },
 ]
 export const DEFAULT_INSTITUTIONAL_NATIVE_ADDRESS = "INSTITUTIONAL_DEFAULT_ADDRESS_PLACEHOLDER"; // Placeholder for institutional default address
