@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { getCoinPrices } from "@/app/actions/get-prices"; // Add this import
 
 // Define a type for the vault data including fetched values
 interface Vault {
@@ -57,7 +58,7 @@ interface Vault {
 // Initial vaults data (copied from vault/page.tsx for now)
 const initialVaults: Vault[] = [
   {
-    id: "doge",
+    id: "dogecoin", // Changed to match CoinGecko ID
     asset: "DOGE",
     icon: "Ð",
     totalLocked: "150.5M tDOGE",
@@ -99,7 +100,7 @@ const initialVaults: Vault[] = [
     tokenAbi: assetAbi,
   },
   {
-    id: "bitcoin_cash",
+    id: "bitcoin-cash", // Changed to match CoinGecko ID
     asset: "BCH",
     icon: "₿",
     totalLocked: "5,120 tBCH",
@@ -120,7 +121,7 @@ const initialVaults: Vault[] = [
     tokenAbi: assetAbi,
   },
   {
-    id: "xrp",
+    id: "ripple", // Changed to match CoinGecko ID
     asset: "XRP",
     icon: "X",
     totalLocked: "0.00 tXRP",
@@ -202,6 +203,7 @@ export default function InstitutionalDashboardPage() {
 
   const [vaultsData, setVaultsData] = useState<Vault[]>(initialVaults)
   const [isLoadingVaultData, setIsLoadingVaultData] = useState(true)
+  const [coinPrices, setCoinPrices] = useState<Record<string, number>>({}); // New state for coin prices
 
   const isCorrectNetwork = chainId === SUPPORTED_CHAINS.SEPOLIA
 
@@ -213,6 +215,14 @@ export default function InstitutionalDashboardPage() {
       // router.push("/")
     }
   }, [userType, router])
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      const prices = await getCoinPrices();
+      setCoinPrices(prices);
+    };
+    fetchPrices();
+  }, []); // Fetch prices once on component mount
 
   useEffect(() => {
     const fetchVaultData = async () => {
@@ -314,7 +324,8 @@ export default function InstitutionalDashboardPage() {
   const totalValueLocked = vaultsData.reduce((sum, vault) => {
     // This is a placeholder. A real implementation would sum actual locked values.
     // For now, we'll just sum the 'totalMinted' as a proxy for total value in the vault.
-    return sum + parseFloat(vault.totalMinted || "0");
+    const price = coinPrices[vault.id] || 0; // Get price for the asset
+    return sum + parseFloat(vault.totalMinted || "0") * price;
   }, 0);
 
   const activeVaultCount = vaultsData.filter(
@@ -354,7 +365,7 @@ export default function InstitutionalDashboardPage() {
         <StatCard
           icon={<Coins size={20} className="text-primary" />}
           label="Total tDOGE Minted"
-          value={isLoadingVaultData ? null : parseFloat(vaultsData.find(v => v.id === "doge")?.totalMinted || "0").toFixed(2)}
+          value={isLoadingVaultData ? null : parseFloat(vaultsData.find(v => v.id === "dogecoin")?.totalMinted || "0").toFixed(2)}
           description="Total minted tDOGE"
           isLoading={isLoadingVaultData}
           delay={100}

@@ -182,7 +182,7 @@ export default function RetailDashboardPage() {
                   <TableBody>
                     {mintRecords.slice(0, 5).map((record) => (
                       <TableRow key={record.id}>
-                        <TableCell>{parseFloat(record.amount).toFixed(2)}
+                        <TableCell>{parseFloat(record.amount).toFixed(4)}
                           <div className="text-xs text-muted-foreground">
                           {record?.nativeChainName || record?.vaultChain}
                         </div>

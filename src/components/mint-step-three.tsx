@@ -67,6 +67,9 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
         case "txrp":
           proveApiEndpoint = "/api/prove-xrp-transaction"
           break
+        case "tada":
+          proveApiEndpoint = "/api/prove-cardano-transaction"
+          break
         default:
           throw new Error(`Unsupported vault selected: ${vault?.name}`)
       }
@@ -87,7 +90,7 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
         throw new Error(data?.error || "Failed to generate proof")
       }
 
-      const totalAmount = data.totalDoge || data.totalXrp
+      const totalAmount = data.totalDoge || data.totalXrp || data.totalLovelace
       const coinSymbol = vault?.coin || ""
       const decimals = coinSymbol === "DOGE" ? 100000000 : 1000000 
 

@@ -26,8 +26,10 @@ export const CONTRACT_ADDRESSES = {
     TXRP_TOKEN: "0x165d03D3Df6443B87b4B7a6268fd13d37C5e3127",
     TXRP_STAKING_POOL: "0x0000000000000000000000000000000000000000",
     TXRP_ASSET_MANAGEMENT: "0x25920221ff112bb8902Bc0A82a6A8744717A8323",
+    TADA_TOKEN: "0xF81e5CA71ACbF721578c574Ed65Fe3DE1a6151A5", 
+    TADA_ASSET_MANAGEMENT: "0x0B6F45a00D5f28A8641B64b95a396C248D72339e", 
+    TADA_STAKING_POOL: "0x0000000000000000000000000000000000000ADA2", // Placeholder
   },
-  // Add other networks as needed
 } satisfies Record<number, Record<string, `0x${string}`>>;
 
 export const EXPLORER_URLS = {
@@ -57,11 +59,31 @@ export const VAULTS = [
     description: "Redeem DOGE from your tDOGE balance on the Dogecoin testnet.",
     shortDescription: "The original meme coin, now earning yield",
     coinGeckoId: "dogecoin",
-    explorerUrl: "https://sochain.com/tx/DOGE",
+    explorerUrl: "https://dogechain.info/",
     evmChain: sepolia.name, // Added
     evmChainId: sepolia.id, // Added
     evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
     
+  },
+  {
+    id: "tada",
+    name: "tADA Vault",
+    asset: "tADA",
+    coin: "ADA",
+    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TADA_TOKEN,
+    assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TADA_ASSET_MANAGEMENT,
+    nativeChainName: "Cardano",
+    nativeAddress: "addr1qyvxngqhhvzunlxlkw4f9m6nep00spqtmrlvfgynmrq5q7r0mjnf84mnk78ytza3sunyvqs3llehvfjuwvk338d69t2qqag5yl", // Placeholder for Cardano testnet address
+    icon: "https://assets.coingecko.com/coins/images/975/thumb/cardano.png", // Cardano icon
+    iconChar: "₳",
+    color: "from-blue-500 to-white", // Example color for Cardano
+    description: "Redeem ADA from your tADA balance on the Cardano blockchain.",
+    shortDescription: "Cardano's native asset, now earning yield",
+    coinGeckoId: "cardano",
+    explorerUrl: "https://testnet.cardanoscan.io/transaction/", // Placeholder for Cardano testnet explorer
+    evmChain: sepolia.name,
+    evmChainId: sepolia.id,
+    evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA],
   },
   // {
   //   id: "tltc",
@@ -118,7 +140,7 @@ export const VAULTS = [
     description: "Redeem XRP from your tXRP balance on the XRP testnet.",
     shortDescription: "The digital asset for payments",
     coinGeckoId: "ripple",
-    explorerUrl: "httpshttps://xrpscan.com/tx/",
+    explorerUrl: "https://xrpscan.com",
     evmChain: sepolia.name,
     evmChainId: sepolia.id,
     evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA],

@@ -95,6 +95,8 @@ export default function RedeemRequestsPage() {
         return "Ł"
       case "BCH":
         return "₿"
+      case "ADA": // Added for Cardano
+        return "₳"
       default:
         return asset.charAt(0)
     }
@@ -108,6 +110,8 @@ export default function RedeemRequestsPage() {
         return "from-gray-400 to-gray-600"
       case "BCH":
         return "from-green-500 to-emerald-600"
+      case "ADA": // Added for Cardano
+        return "from-blue-600 to-purple-600"
       default:
         return "from-gray-400 to-gray-600"
     }
