@@ -206,7 +206,7 @@ export function ValidationStepGuide({
             <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
               <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
               <AlertDescription className="text-blue-800 dark:text-blue-200">
-                <strong>Generating Dogecoin Proof:</strong> Please wait while we generate a cryptographic proof of your
+                <strong>Generating Proof:</strong> Please wait while we generate a cryptographic proof of your
                 transaction. This process may take 1-3 minutes.
               </AlertDescription>
             </Alert>
