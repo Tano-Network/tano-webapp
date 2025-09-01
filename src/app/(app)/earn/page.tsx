@@ -50,7 +50,7 @@ interface EarnPool {
 }
 
 const initialEarnPools: EarnPool[] = VAULTS.map((vault) => ({
-  id: vault.id.startsWith('t') ? vault.id.substring(1) : vault.id,
+  id:  vault.id,
   asset: vault.asset,
   icon: vault.iconChar,
   contractAddress: vault.stakingContractAddress,

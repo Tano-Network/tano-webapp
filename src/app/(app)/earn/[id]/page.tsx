@@ -44,98 +44,14 @@ import earnStakingAbi from "@/abi/earnStaking.json"; // New ABI for staking
 import assetAbi from "@/abi/asset.json"; // ABI for ERC20 token (tDOGE)
 import { cn } from "@/lib/utils";
 import { useAccount, useChainId } from "wagmi";
-import {
-  CONTRACT_ADDRESSES,
-  EXPLORER_URLS,
-  SUPPORTED_CHAINS,
-} from "@/lib/constants";
+import { VAULTS, Vault } from "@/lib/constants";
 import { LoadingSpinner } from "@/components/LoadingSpinner"; // Import LoadingSpinner
 
-interface EarnParams {
-  id: string;
-}
+export default function EarnPoolPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params); // unwrap the Promise
 
-/**
- * Returns the earn pool data for a given id.
- * If the id is not found, a default object is returned with placeholder values.
- *
- * @param id - The id of the earn pool (e.g., "doge", "litecoin", etc.)
- * @returns An object containing the earn pool data
- */
-const getEarnPoolData = (id: string) => {
-  const earnPools: Record<
-    string,
-    {
-      asset: string;
-      icon: string;
-      contractAddress: string; // Staking pool contract
-      stakingTokenAddress: string; // The token being staked (e.g., tDOGE)
-      color: string;
-      description: string;
-    }
-  > = {
-    doge: {
-      asset: "tDOGE",
-      icon: "Ð",
-      contractAddress:
-        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_STAKING_POOL,
-      stakingTokenAddress:
-        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_TOKEN,
-      color: "from-yellow-500 to-orange-500",
-      description: "Stake your tDOGE to earn rewards",
-    },
-    litecoin: {
-      asset: "tLTC",
-      icon: "Ł",
-      contractAddress:
-        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_STAKING_POOL,
-      stakingTokenAddress:
-        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN,
-      color: "from-gray-400 to-gray-600",
-      description: "Stake your tLTC to earn rewards",
-    },
-    bitcoin_cash: {
-      asset: "tBCH",
-      icon: "₿",
-      contractAddress:
-        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_STAKING_POOL,
-      stakingTokenAddress:
-        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
-      color: "from-green-500 to-emerald-600",
-      description: "Stake your tBCH to earn rewards",
-    },
-    ripple: {
-      asset: "tXRP",
-      icon: "X",
-      contractAddress:
-        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_STAKING_POOL,
-      stakingTokenAddress:
-        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
-      color: "from-blue-400 to-indigo-600",
-      description: "Stake your tXRP to earn rewards",
-    },
-  };
-  return (
-    earnPools[id] || {
-      asset: "Unknown",
-      icon: "?",
-      contractAddress: "0x0000000000000000000000000000000000000000",
-      stakingTokenAddress: "0x0000000000000000000000000000000000000000",
-      color: "from-gray-400 to-gray-600",
-      description: "Unknown earn pool",
-    }
-  );
-};
-
-export default function EarnPoolPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  // Safely access params.id
-  const { id } = use(params);
-  const poolId = typeof id === "string" ? id : "";
-  const pool = getEarnPoolData(poolId);
+  const pool = VAULTS.find((v) => v.id === id); 
+ 
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { toast } = useToast();
@@ -157,43 +73,23 @@ export default function EarnPoolPage({
   }>({ title: "", description: "", isSuccess: false });
 
   const [isLoading, setIsLoading] = useState(true);
-  const [pageError, setPageError] = useState<string | null>(null); // Renamed to avoid conflict with 'error' in modal
+  const [pageError, setPageError] = useState<string | null>(null);
 
-  // Check if we're on Sepolia testnet
-  const isCorrectNetwork = chainId === SUPPORTED_CHAINS.SEPOLIA;
-  const explorerUrl =
-    EXPLORER_URLS[chainId as keyof typeof EXPLORER_URLS] ||
-    EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA];
+  const isCorrectNetwork = chainId === pool?.evmChainId;
+  const explorerUrl = pool?.evmExplorerUrl;
 
-  // Handle invalid pool ID early
   useEffect(() => {
-    if (!poolId || pool.asset === "Unknown") {
+    if (!pool) {
       setPageError(
         "Invalid earn pool ID. Please go back to the Earn Dashboard."
       );
       setIsLoading(false);
     }
-  }, [poolId, pool.asset]);
+  }, [pool]);
 
   useEffect(() => {
-    /**
-     * Connects to the Ethereum network and performs necessary checks for the earn pool.
-     *
-     * - Ensures the user's wallet is connected and on the correct network (Sepolia testnet).
-     * - Verifies the pool's contract and token addresses are valid and active.
-     * - Reads from the pool's staking contract and token contract to ensure they are accessible.
-     * - Updates the page error state based on any issues encountered during the connection process.
-     *
-     * Throws:
-     * - Sets an error message if MetaMask or another Web3 wallet is not installed.
-     * - Sets an error message if the wallet is not connected.
-     * - Sets an error message if the user is not on the Sepolia testnet.
-     * - Sets an error message if the earn pool is not active or has an invalid contract address.
-     * - Sets an error message if there are issues reading from the contracts.
-     */
-
     const connect = async () => {
-      if (pageError) return;
+      if (pageError || !pool) return;
 
       try {
         if (!window.ethereum) {
@@ -208,14 +104,15 @@ export default function EarnPoolPage({
 
         if (!isCorrectNetwork) {
           setPageError(
-            `Please switch to Sepolia testnet (Chain ID: ${SUPPORTED_CHAINS.SEPOLIA})`
+            `Please switch to ${pool.evmChain} (Chain ID: ${pool.evmChainId})`
           );
           return;
         }
 
         if (
-          !pool.contractAddress ||
-          pool.contractAddress === "0x0000000000000000000000000000000000000000"
+          !pool.stakingContractAddress ||
+          pool.stakingContractAddress ===
+            "0x0000000000000000000000000000000000000000"
         ) {
           setPageError(
             "This earn pool is not yet active or has an invalid contract address."
@@ -223,16 +120,14 @@ export default function EarnPoolPage({
           return;
         }
 
-        // Read-only contract check (e.g. totalStaked or name)
         await readContract(config, {
-          address: pool.contractAddress as `0x${string}`,
+          address: pool.stakingContractAddress as `0x${string}`,
           abi: earnStakingAbi,
-          functionName: "totalStaked", // or any view function
+          functionName: "totalStaked",
         });
 
-        // Check ERC20 token contract is readable
         await readContract(config, {
-          address: pool.stakingTokenAddress as `0x${string}`,
+          address: pool.tokenAddress as `0x${string}`,
           abi: assetAbi,
           functionName: "decimals",
         });
@@ -248,8 +143,7 @@ export default function EarnPoolPage({
 
     connect();
   }, [
-    pool.contractAddress,
-    pool.stakingTokenAddress,
+    pool,
     isConnected,
     address,
     isCorrectNetwork,
@@ -257,30 +151,17 @@ export default function EarnPoolPage({
   ]);
 
   useEffect(() => {
-    /**
-     * Fetches and updates the state of the earn pool page.
-     *
-     * - Reads the following data from the earn pool's staking contract and token contract:
-     *   - The user's staked balance.
-     *   - The total amount staked in the pool.
-     *   - The user's token balance.
-     *   - The amount of tokens the user has approved for staking.
-     * - Updates the page state based on the data fetched.
-     * - Sets an error message if there are any issues fetching the data.
-     * - Automatically called when the component mounts and when the user switches between deposit and withdraw modes.
-     *
-     * Returns a Promise that resolves to void.
-     */
     const fetchState = async () => {
       if (
         !address ||
         !isCorrectNetwork ||
         pageError ||
-        !pool.contractAddress ||
-        !pool.stakingTokenAddress ||
-        pool.contractAddress === "0x0000000000000000000000000000000000000000" ||
-        pool.stakingTokenAddress ===
-          "0x0000000000000000000000000000000000000000"
+        !pool ||
+        !pool.stakingContractAddress ||
+        !pool.tokenAddress ||
+        pool.stakingContractAddress ===
+          "0x0000000000000000000000000000000000000000" ||
+        pool.tokenAddress === "0x0000000000000000000000000000000000000000"
       ) {
         setIsLoading(false);
         return;
@@ -292,27 +173,27 @@ export default function EarnPoolPage({
         const [stakedBal, totalStakedAmt, tokenBal, tokenAllow] =
           await Promise.all([
             readContract(config, {
-              address: pool.contractAddress as `0x${string}`,
+              address: pool.stakingContractAddress as `0x${string}`,
               abi: earnStakingAbi,
               functionName: "getStakedBalance",
               args: [address],
             }),
             readContract(config, {
-              address: pool.contractAddress as `0x${string}`,
+              address: pool.stakingContractAddress as `0x${string}`,
               abi: earnStakingAbi,
               functionName: "totalStaked",
             }),
             readContract(config, {
-              address: pool.stakingTokenAddress as `0x${string}`,
+              address: pool.tokenAddress as `0x${string}`,
               abi: assetAbi,
               functionName: "balanceOf",
               args: [address],
             }),
             readContract(config, {
-              address: pool.stakingTokenAddress as `0x${string}`,
+              address: pool.tokenAddress as `0x${string}`,
               abi: assetAbi,
               functionName: "allowance",
-              args: [address, pool.contractAddress],
+              args: [address, pool.stakingContractAddress],
             }),
           ]);
 
@@ -324,7 +205,7 @@ export default function EarnPoolPage({
       } catch (err) {
         console.error("Fetch error:", err);
         setPageError(
-          "Failed to fetch earn pool data. Please ensure you are on Sepolia testnet and contracts are deployed."
+          `Failed to fetch earn pool data. Please ensure you are on ${pool.evmChain} and contracts are deployed.`
         );
       } finally {
         setIsLoading(false);
@@ -332,45 +213,35 @@ export default function EarnPoolPage({
     };
 
     fetchState();
-  }, [
-    address,
-    isCorrectNetwork,
-    pageError,
-    pool.contractAddress,
-    pool.stakingTokenAddress,
-  ]);
+  }, [address, isCorrectNetwork, pageError, pool]);
 
-  /**
-   * Refreshes the state of the staking pool by fetching the latest data from the contract.
-   * Called after deposit/withdrawal transactions.
-   * @returns {Promise<void>}
-   */
   const refreshState = async () => {
+    if (!pool) return;
     try {
       const [stakedBal, totalStakedAmt, tokenBal, tokenAllow] =
         await Promise.all([
           readContract(config, {
-            address: pool.contractAddress as `0x${string}`,
+            address: pool.stakingContractAddress as `0x${string}`,
             abi: earnStakingAbi,
             functionName: "getStakedBalance",
             args: [address!],
           }),
           readContract(config, {
-            address: pool.contractAddress as `0x${string}`,
+            address: pool.stakingContractAddress as `0x${string}`,
             abi: earnStakingAbi,
             functionName: "totalStaked",
           }),
           readContract(config, {
-            address: pool.stakingTokenAddress as `0x${string}`,
+            address: pool.tokenAddress as `0x${string}`,
             abi: assetAbi,
             functionName: "balanceOf",
             args: [address!],
           }),
           readContract(config, {
-            address: pool.stakingTokenAddress as `0x${string}`,
+            address: pool.tokenAddress as `0x${string}`,
             abi: assetAbi,
             functionName: "allowance",
-            args: [address!, pool.contractAddress],
+            args: [address!, pool.stakingContractAddress],
           }),
         ]);
 
@@ -388,26 +259,8 @@ export default function EarnPoolPage({
     }
   };
 
-  /**
-   * Handles the token approval process for staking.
-   *
-   * - Validates the deposit amount and network.
-   * - Initiates token approval for staking by sending a transaction to the blockchain.
-   * - Provides feedback to the user through modals and toasts.
-   * - Updates the token allowance state upon successful approval.
-   * - Sets processing state and handles errors gracefully.
-   *
-   * Preconditions:
-   * - The user must be connected to the correct network (Sepolia testnet).
-   * - A valid deposit amount must be provided by the user.
-   *
-   * Postconditions:
-   * - The token approval transaction is submitted and confirmed.
-   * - The token allowance state is updated based on the new approval.
-   * - User is notified of success or failure of the approval process.
-   */
-
   const handleApprove = async () => {
+    if (!pool) return;
     if (!depositAmount || Number.parseFloat(depositAmount) <= 0) {
       toast({
         title: "Invalid Amount",
@@ -419,7 +272,7 @@ export default function EarnPoolPage({
     if (!isCorrectNetwork) {
       toast({
         title: "Wrong Network",
-        description: "Please switch to Sepolia testnet",
+        description: `Please switch to ${pool.evmChain}`,
         variant: "destructive",
       });
       return;
@@ -434,13 +287,13 @@ export default function EarnPoolPage({
         isSuccess: false,
       });
 
-      const amountBigInt = parseUnits(depositAmount, 18);
+      const amountBigInt = parseUnits(depositAmount, pool.stakingDecimals);
 
       const hash = await writeContractAsync({
-        address: pool.stakingTokenAddress as `0x${string}`,
+        address: pool.tokenAddress as `0x${string}`,
         abi: assetAbi,
         functionName: "approve",
-        args: [pool.contractAddress, amountBigInt],
+        args: [pool.stakingContractAddress, amountBigInt],
       });
 
       setModalContent({
@@ -465,10 +318,10 @@ export default function EarnPoolPage({
       });
 
       const newAllowance = await readContract(config, {
-        address: pool.stakingTokenAddress as `0x${string}`,
+        address: pool.tokenAddress as `0x${string}`,
         abi: assetAbi,
         functionName: "allowance",
-        args: [address!, pool.contractAddress],
+        args: [address!, pool.stakingContractAddress],
       });
       setTokenAllowance(newAllowance as bigint);
     } catch (err) {
@@ -478,20 +331,8 @@ export default function EarnPoolPage({
     }
   };
 
-  /**
-   * Handles depositing tokens to the earn pool
-   *
-   * If the user does not have enough tokens in their wallet, or if the user does not have enough allowance, toast an error
-   *
-   * If the user is not on the correct network, toast an error
-   *
-   * If the user confirms the deposit, wait for the transaction to be confirmed and then toast success
-   *
-   * If the user cancels the deposit, do nothing
-   *
-   * @param {string} depositAmount - the amount of tokens to deposit
-   */
   const handleDeposit = async () => {
+    if (!pool) return;
     if (!depositAmount || Number.parseFloat(depositAmount) <= 0) {
       toast({
         title: "Invalid Amount",
@@ -503,12 +344,12 @@ export default function EarnPoolPage({
     if (!isCorrectNetwork) {
       toast({
         title: "Wrong Network",
-        description: "Please switch to Sepolia testnet",
+        description: `Please switch to ${pool.evmChain}`,
         variant: "destructive",
       });
       return;
     }
-    const amountBigInt = parseUnits(depositAmount, 18);
+    const amountBigInt = parseUnits(depositAmount, pool.stakingDecimals);
     if (amountBigInt > tokenBalance) return toastErr("Insufficient balance");
     if (amountBigInt > tokenAllowance)
       return toastErr("Insufficient allowance");
@@ -523,7 +364,7 @@ export default function EarnPoolPage({
       });
 
       const hash = await writeContractAsync({
-        address: pool.contractAddress as `0x${string}`,
+        address: pool.stakingContractAddress as `0x${string}`,
         abi: earnStakingAbi,
         functionName: "deposit",
         args: [amountBigInt],
@@ -559,20 +400,8 @@ export default function EarnPoolPage({
     }
   };
 
-  /**
-   * Handles withdrawing tokens from the earn pool
-   *
-   * If the user does not have enough staked tokens, toast an error
-   *
-   * If the user is not on the correct network, toast an error
-   *
-   * If the user confirms the withdrawal, wait for the transaction to be confirmed and then toast success
-   *
-   * If the user cancels the withdrawal, do nothing
-   *
-   * @param {string} withdrawAmount - the amount of tokens to withdraw
-   */
   const handleWithdraw = async () => {
+    if (!pool) return;
     if (!withdrawAmount || Number.parseFloat(withdrawAmount) <= 0) {
       toast({
         title: "Invalid Amount",
@@ -584,12 +413,12 @@ export default function EarnPoolPage({
     if (!isCorrectNetwork) {
       toast({
         title: "Wrong Network",
-        description: "Please switch to Sepolia testnet",
+        description: `Please switch to ${pool.evmChain}`,
         variant: "destructive",
       });
       return;
     }
-    const amountBigInt = parseUnits(withdrawAmount, 18);
+    const amountBigInt = parseUnits(withdrawAmount, pool.stakingDecimals);
     if (amountBigInt > stakedBalance)
       return toastErr("Insufficient staked balance");
 
@@ -603,7 +432,7 @@ export default function EarnPoolPage({
       });
 
       const hash = await writeContractAsync({
-        address: pool.contractAddress as `0x${string}`,
+        address: pool.stakingContractAddress as `0x${string}`,
         abi: earnStakingAbi,
         functionName: "withdraw",
         args: [amountBigInt],
@@ -639,19 +468,9 @@ export default function EarnPoolPage({
     }
   };
 
-  // Helpers
   function toastErr(message: string) {
     toast({ title: "Error", description: message, variant: "destructive" });
   }
-
-  /**
-   * Handles errors by logging them, setting modal content with an appropriate message,
-   * and displaying a toast notification. Specific error messages are provided for user
-   * rejection and insufficient funds scenarios.
-   *
-   * @param {string} type - The operation type that failed (e.g., 'Withdraw', 'Deposit').
-   * @param {any} err - The error object containing information about the failure.
-   */
 
   function handleError(type: string, err: any) {
     console.error(`${type} error:`, err);
@@ -674,32 +493,13 @@ export default function EarnPoolPage({
     });
   }
 
-  const formattedStakedBalance = Number(formatUnits(stakedBalance, 18)).toFixed(
-    4
-  );
-  const formattedTokenBalance = Number(formatUnits(tokenBalance, 18)).toFixed(
-    4
-  );
-  const formattedTotalStaked = Number(formatUnits(totalStaked, 18)).toFixed(4);
-  const formattedTokenAllowance = Number(
-    formatUnits(tokenAllowance, 18)
-  ).toFixed(4);
-
-  const usagePercentage =
-    Number(formatUnits(totalStaked, 18)) > 0
-      ? (Number(formatUnits(stakedBalance, 18)) /
-          Number(formatUnits(totalStaked, 18))) *
-        100
-      : 0;
-
-  // Render loading state if data is still being fetched or if poolId is invalid
-  if (isLoading || !poolId || pool.asset === "Unknown") {
+  if (isLoading || !pool) {
     return (
       <div className="container mx-auto p-4 max-w-2xl flex flex-col items-center justify-center min-h-[60vh]">
         <LoadingSpinner size="lg" />
         <div className="mt-4 text-muted-foreground">
           {pageError ||
-            (poolId ? "Loading earn pool data..." : "Invalid pool ID...")}
+            (id ? "Loading earn pool data..." : "Invalid pool ID...")}
         </div>
         {pageError && (
           <Button asChild variant="outline" className="mt-6 bg-transparent">
@@ -712,6 +512,26 @@ export default function EarnPoolPage({
       </div>
     );
   }
+
+  const formattedStakedBalance = Number(
+    formatUnits(stakedBalance, pool.stakingDecimals)
+  ).toFixed(4);
+  const formattedTokenBalance = Number(
+    formatUnits(tokenBalance, pool.stakingDecimals)
+  ).toFixed(4);
+  const formattedTotalStaked = Number(
+    formatUnits(totalStaked, pool.stakingDecimals)
+  ).toFixed(4);
+  const formattedTokenAllowance = Number(
+    formatUnits(tokenAllowance, pool.stakingDecimals)
+  ).toFixed(4);
+
+  const usagePercentage =
+    Number(formatUnits(totalStaked, pool.stakingDecimals)) > 0
+      ? (Number(formatUnits(stakedBalance, pool.stakingDecimals)) /
+          Number(formatUnits(totalStaked, pool.stakingDecimals))) *
+        100
+      : 0;
 
   if (!isConnected) {
     return (
@@ -738,7 +558,7 @@ export default function EarnPoolPage({
         <Alert variant="destructive" className="mb-4">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Please switch to Sepolia testnet to use this earn pool. Current
+            Please switch to {pool.evmChain} to use this earn pool. Current
             network: {chainId}
           </AlertDescription>
         </Alert>
@@ -753,7 +573,6 @@ export default function EarnPoolPage({
   }
 
   if (pageError) {
-    // Display specific page errors
     return (
       <div className="container mx-auto p-4 max-w-2xl">
         <Alert variant="destructive" className="mb-4">
@@ -773,14 +592,13 @@ export default function EarnPoolPage({
   const needsApproval =
     mode === "deposit" &&
     Number.parseFloat(depositAmount) > 0 &&
-    parseUnits(depositAmount, 18) > tokenAllowance;
+    parseUnits(depositAmount, pool.stakingDecimals) > tokenAllowance;
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       <BackButton href="/earn">Back to Earn Pools</BackButton>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Earn Card */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
@@ -791,20 +609,19 @@ export default function EarnPoolPage({
                     pool.color
                   )}
                 >
-                  {pool.icon}
+                  {pool.iconChar}
                 </div>
                 <div>
                   <CardTitle className="text-2xl">Stake {pool.asset}</CardTitle>
-                  <CardDescription>{pool.description}</CardDescription>
+                  <CardDescription>{pool.stakingDescription}</CardDescription>
                 </div>
                 <Badge variant="default" className="ml-auto">
-                  Sepolia Testnet
+                  {pool.evmChain}
                 </Badge>
               </div>
             </CardHeader>
 
             <CardContent className="space-y-6">
-              {/* Mode Toggle */}
               <div className="flex bg-secondary/30 rounded-lg p-1">
                 <button
                   onClick={() => setMode("deposit")}
@@ -832,7 +649,6 @@ export default function EarnPoolPage({
                 </button>
               </div>
 
-              {/* Input Section */}
               <div className="space-y-4">
                 {mode === "deposit" ? (
                   <div className="space-y-2">
@@ -947,7 +763,8 @@ export default function EarnPoolPage({
                       Number.parseFloat(depositAmount) <= 0 ||
                       isProcessing ||
                       isLoading ||
-                      parseUnits(depositAmount, 18) > tokenBalance
+                      parseUnits(depositAmount, pool.stakingDecimals) >
+                        tokenBalance
                     }
                     className="w-full h-12 text-base"
                     size="lg"
@@ -972,12 +789,15 @@ export default function EarnPoolPage({
                       (mode === "deposit" &&
                         (!depositAmount ||
                           Number.parseFloat(depositAmount) <= 0 ||
-                          parseUnits(depositAmount, 18) > tokenBalance ||
-                          parseUnits(depositAmount, 18) > tokenAllowance)) ||
+                          parseUnits(depositAmount, pool.stakingDecimals) >
+                            tokenBalance ||
+                          parseUnits(depositAmount, pool.stakingDecimals) >
+                            tokenAllowance)) ||
                       (mode === "withdraw" &&
                         (!withdrawAmount ||
                           Number.parseFloat(withdrawAmount) <= 0 ||
-                          parseUnits(withdrawAmount, 18) > stakedBalance))
+                          parseUnits(withdrawAmount, pool.stakingDecimals) >
+                            stakedBalance))
                     }
                     className="w-full h-12 text-base"
                     size="lg"
@@ -999,7 +819,6 @@ export default function EarnPoolPage({
           </Card>
         </div>
 
-        {/* Stats Sidebar */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -1080,14 +899,19 @@ export default function EarnPoolPage({
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Network</span>
-                <span className="font-medium">Sepolia Testnet</span>
+                <span className="font-medium">{pool.evmChain}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Contract</span>
-                <span className="font-mono text-xs">
-                  {pool.contractAddress.slice(0, 6)}...
-                  {pool.contractAddress.slice(-4)}
-                </span>
+                <a
+                  href={`${explorerUrl}/address/${pool.stakingContractAddress}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-xs hover:underline"
+                >
+                  {pool.stakingContractAddress.slice(0, 6)}...
+                  {pool.stakingContractAddress.slice(-4)}
+                </a>
               </div>
             </CardContent>
           </Card>
@@ -1111,7 +935,7 @@ export default function EarnPoolPage({
                 {modalContent.isSuccess && modalContent.txHash && (
                   <Button asChild variant="outline" size="sm">
                     <a
-                      href={`${explorerUrl}/${modalContent.txHash}`}
+                      href={`${explorerUrl}/tx/${modalContent.txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2"

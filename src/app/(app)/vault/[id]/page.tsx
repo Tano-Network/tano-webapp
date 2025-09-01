@@ -41,7 +41,7 @@ import { Loader2 } from "lucide-react";
 import { CheckCircle2, ExternalLink } from "lucide-react";
 
 
-type VaultKey = "doge" | "tdoge" | "litecoin" | "bitcoin_cash" | "txrp";
+type VaultKey = "doge" | "tdoge" | "litecoin" | "bitcoin_cash" | "txrp" | "tada";
 
 /**
  * Returns the vault data for a given id.
@@ -106,6 +106,15 @@ const getVaultData = (id: string) => {
       assetAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
       color: "from-blue-400 to-indigo-600",
       description: "Tokenized XRP for DeFi applications",
+    },
+    tada: {
+      asset: "tADA",
+      icon: "A",
+      contractAddress:
+        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TADA_ASSET_MANAGEMENT,
+      assetAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TADA_TOKEN,
+      color: "from-pink-500 to-pink-600",
+      description: "Tokenized Cardano for DeFi applications",
     },
   };
 
