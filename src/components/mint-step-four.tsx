@@ -33,12 +33,8 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
 
   const { writeContractAsync, data: hash, error, isPending } = useWriteContract()
 
-  const handleMintSuccess = async (txHash: string) => {
-    if (!txHash) return
-
-
+  const createMintRecord = async (status: string, txHash?: string) => {
     try {
-      // Create mint record with both native tx hash and minting tx hash
       const response = await fetch("/api/mint-records", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -50,30 +46,39 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
           userAddress: address,
           userAddressNative: validationData.senderAddress,
           nativeTxHash: validationData.txHash,
-
-          mintTxHash: txHash,
-
+          mintTxHash: txHash, // This will be undefined for "pending" status initially
           amount: validationData.amount,
-          status: "completed",
+          status: status,
           proofData: validationData.proof,
         }),
       })
 
-      if (response.ok) {
-        toast({
-          title: "Mint Record Created",
-          description: "Your mint has been successfully recorded.",
-        })
-        onComplete()
-      } else {
-        throw new Error("Failed to create mint record")
+      if (!response.ok) {
+        throw new Error(`Failed to create mint record with status ${status}`)
       }
+      return response.json() // Return the created record
     } catch (error: any) {
       toast({
         title: "Record Creation Failed",
         description: error.message || "Failed to create mint record.",
         variant: "destructive",
       })
+      throw error // Re-throw to propagate the error
+    }
+  }
+
+  const updateMintRecord = async (txHash: string) => {
+    if (!txHash) return
+
+    try {
+      await createMintRecord("completed", txHash)
+      toast({
+        title: "Mint Record Created",
+        description: "Your mint has been successfully recorded.",
+      })
+      onComplete()
+    } catch (error) {
+      // Error already toasted in createMintRecord
     } finally {
       setIsMinting(false)
     }
@@ -107,7 +112,7 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
           </a>
         ),
       })
-      handleMintSuccess(receipt.transactionHash)
+      updateMintRecord(receipt.transactionHash)
     }
   }, [isConfirmed, receipt])
 
@@ -119,6 +124,7 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
         description: mintingTxError.message,
         variant: "destructive",
       })
+      createMintRecord("failed") // Call createMintRecord with "failed" status
       setIsMinting(false)
     }
   }, [isMintingError, mintingTxError])
@@ -137,6 +143,14 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
     }
 
     setIsMinting(true)
+    // Create a pending mint record
+    try {
+      await createMintRecord("pending")
+    } catch (error) {
+      console.error("Failed to create pending mint record:", error)
+      setIsMinting(false)
+      return
+    }
 
     try {
       console.log("Minting with proof:", validationData)

@@ -16,7 +16,10 @@ import { ZeroAddress } from "ethers"
 import assetManagementAbi from "@/abi/assetManagement.json"
 import assetAbi from "@/abi/asset.json"
 import {
-  CONTRACT_ADDRESSES,
+
+  VAULTS,
+  Vault,
+
   SUPPORTED_CHAINS,
 } from "@/lib/constants"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
@@ -34,114 +37,22 @@ import {
 import { getCoinPrices } from "@/app/actions/get-prices"; // Add this import
 
 // Define a type for the vault data including fetched values
-interface Vault {
-  id: string;
-  asset: string;
-  icon: string;
-  totalLocked: string;
-  apy: string;
-  minted: string;
-  whitelistContract: string;
-  whitelistAbi: any;
-  tokenAddress: string;
-  tokenAbi: any;
-  color: string;
-  status: string;
-  description: string;
-  totalMinted: string;
+
+interface FetchedVault extends Vault {
+
   isWhitelisted?: boolean | null;
   mintableAmount?: bigint;
   allowance?: bigint;
   mintedAmount?: bigint;
+
+  totalMinted: string;
 }
 
-// Initial vaults data (copied from vault/page.tsx for now)
-const initialVaults: Vault[] = [
-  {
-    id: "dogecoin", // Changed to match CoinGecko ID
-    asset: "DOGE",
-    icon: "Ð",
-    totalLocked: "150.5M tDOGE",
-    apy: "12.8%",
-    minted: "0.00",
-    whitelistContract:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_ASSET_MANAGEMENT,
-    whitelistAbi: assetManagementAbi,
-    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_TOKEN,
-    tokenAbi: assetAbi,
-    color: "from-yellow-500 to-orange-500",
-    status:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_ASSET_MANAGEMENT !==
-      ZeroAddress
-        ? "active"
-        : "coming-soon",
-    description: "The original meme coin, now earning yield",
-    totalMinted: "0",
-  },
-  {
-    id: "litecoin",
-    asset: "LTC",
-    icon: "Ł",
-    totalLocked: "250.2 tLTC",
-    apy: "8.2%",
-    minted: "0.00",
-    whitelistContract:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT,
-    whitelistAbi: assetManagementAbi,
-    color: "from-gray-400 to-gray-600",
-    status:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT !==
-      ZeroAddress
-        ? "active"
-        : "coming-soon",
-    description: "Digital silver for the digital age",
-    totalMinted: "0",
-    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN,
-    tokenAbi: assetAbi,
-  },
-  {
-    id: "bitcoin-cash", // Changed to match CoinGecko ID
-    asset: "BCH",
-    icon: "₿",
-    totalLocked: "5,120 tBCH",
-    apy: "9.5%",
-    minted: "0.00",
-    whitelistContract:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT,
-    whitelistAbi: assetManagementAbi,
-    color: "from-green-500 to-emerald-600",
-    status:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT !==
-      ZeroAddress
-        ? "active"
-        : "coming-soon",
-    description: "Peer-to-peer electronic cash system",
-    totalMinted: "0",
-    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
-    tokenAbi: assetAbi,
-  },
-  {
-    id: "ripple", // Changed to match CoinGecko ID
-    asset: "XRP",
-    icon: "X",
-    totalLocked: "0.00 tXRP",
-    apy: "0.0%",
-    minted: "0.00",
-    whitelistContract:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_ASSET_MANAGEMENT,
-    whitelistAbi: assetManagementAbi,
-    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
-    tokenAbi: assetAbi,
-    color: "from-blue-400 to-indigo-600",
-    status:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_ASSET_MANAGEMENT !==
-      ZeroAddress
-        ? "active"
-        : "coming-soon",
-    description: "The digital asset for payments",
-    totalMinted: "0",
-  },
-];
+const initialVaults: FetchedVault[] = VAULTS.map((vault) => ({
+  ...vault,
+  totalMinted: "0",
+}));
+
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -201,7 +112,9 @@ export default function InstitutionalDashboardPage() {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
 
-  const [vaultsData, setVaultsData] = useState<Vault[]>(initialVaults)
+
+  const [vaultsData, setVaultsData] = useState<FetchedVault[]>(initialVaults)
+
   const [isLoadingVaultData, setIsLoadingVaultData] = useState(true)
   const [coinPrices, setCoinPrices] = useState<Record<string, number>>({}); // New state for coin prices
 
@@ -242,8 +155,9 @@ export default function InstitutionalDashboardPage() {
             let totalMinted: bigint = BigInt(0);
 
             if (
-              vault.status === "active" &&
-              vault.whitelistContract !== ZeroAddress &&
+            vault.stakingStatus === "active" &&
+              vault.assetManagementAddress !== ZeroAddress &&
+
               vault.tokenAddress !== ZeroAddress
             ) {
               try {
@@ -255,26 +169,34 @@ export default function InstitutionalDashboardPage() {
                   supply,
                 ] = await Promise.all([
                   readContract(config, {
-                    address: vault.whitelistContract as `0x${string}`,
-                    abi: vault.whitelistAbi,
+
+                    address: vault.assetManagementAddress as `0x${string}`,
+                    abi: assetManagementAbi,
+
                     functionName: "isWhitelisted",
                     args: [address],
                   }),
                   readContract(config, {
-                    address: vault.whitelistContract as `0x${string}`,
-                    abi: vault.whitelistAbi,
+
+                    address: vault.assetManagementAddress as `0x${string}`,
+                    abi: assetManagementAbi,
+
                     functionName: "getMintableAmount",
                     args: [address],
                   }),
                   readContract(config, {
-                    address: vault.whitelistContract as `0x${string}`,
-                    abi: vault.whitelistAbi,
+
+                    address: vault.assetManagementAddress as `0x${string}`,
+                    abi: assetManagementAbi,
+
                     functionName: "getAllowance",
                     args: [address],
                   }),
                   readContract(config, {
-                    address: vault.whitelistContract as `0x${string}`,
-                    abi: vault.whitelistAbi,
+
+                    address: vault.assetManagementAddress as `0x${string}`,
+                    abi: assetManagementAbi,
+
                     functionName: "getMintedAmount",
                     args: [address],
                   }),
@@ -322,14 +244,21 @@ export default function InstitutionalDashboardPage() {
   }, [address, isConnected, isCorrectNetwork])
 
   const totalValueLocked = vaultsData.reduce((sum, vault) => {
-    // This is a placeholder. A real implementation would sum actual locked values.
-    // For now, we'll just sum the 'totalMinted' as a proxy for total value in the vault.
-    const price = coinPrices[vault.id] || 0; // Get price for the asset
+
+    const price = coinPrices[vault.coinGeckoId] || 0; // Get price for the asset
+    return sum + parseFloat(formatUnits(vault.allowance || BigInt(0), 18)) * price;
+  }, 0);
+
+  const totalAssetsMinted = vaultsData.reduce((sum, vault) => {
+    const price = coinPrices[vault.coinGeckoId] || 0; // Get price for the asset
+
     return sum + parseFloat(vault.totalMinted || "0") * price;
   }, 0);
 
   const activeVaultCount = vaultsData.filter(
-    (v) => v.status === "active"
+
+    (v) => v.stakingStatus === "active"
+
   ).length;
 
   return (
@@ -356,35 +285,34 @@ export default function InstitutionalDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           icon={<Lock size={20} className="text-primary" />}
-          label="Total Value Locked (tAssets)"
-          value={isLoadingVaultData ? null : `${totalValueLocked.toFixed(2)}`}
+
+          label="Total Allowances (tAssets)"
+          value={isLoadingVaultData ? null : `$${totalValueLocked.toFixed(2)}`}
+
           description="Across all active vaults"
           isLoading={isLoadingVaultData}
           delay={0}
         />
         <StatCard
           icon={<Coins size={20} className="text-primary" />}
-          label="Total tDOGE Minted"
-          value={isLoadingVaultData ? null : parseFloat(vaultsData.find(v => v.id === "dogecoin")?.totalMinted || "0").toFixed(2)}
-          description="Total minted tDOGE"
+
+          label="Total Assets Minted"
+          value={isLoadingVaultData ? null : `$${totalAssetsMinted.toFixed(2)}`}
+          description="Total minted assets in $"
+
           isLoading={isLoadingVaultData}
           delay={100}
         />
         <StatCard
-          icon={<Coins size={20} className="text-primary" />}
-          label="Total tLTC Minted"
-          value={isLoadingVaultData ? null : parseFloat(vaultsData.find(v => v.id === "litecoin")?.totalMinted || "0").toFixed(2)}
-          description="Total minted tLTC"
-          isLoading={isLoadingVaultData}
-          delay={200}
-        />
-        <StatCard
+
           icon={<Shield size={20} className="text-primary" />}
           label="Active Vaults"
           value={isLoadingVaultData ? null : activeVaultCount.toString()}
           description="Currently operational"
           isLoading={isLoadingVaultData}
-          delay={300}
+
+          delay={200}
+
         />
       </div>
 
@@ -424,7 +352,9 @@ export default function InstitutionalDashboardPage() {
                       <TableCell>{parseFloat(formatUnits(vault.mintableAmount || BigInt(0), 18)).toFixed(2)}</TableCell>
                       <TableCell>{parseFloat(formatUnits(vault.allowance || BigInt(0), 18)).toFixed(2) }</TableCell>
                       <TableCell>
-                        <Button asChild size="sm" disabled={vault.status === "coming-soon"}>
+
+                        <Button asChild size="sm" disabled={vault.stakingStatus === "inactive"}>
+
                           <Link href={`/vault/${vault.id}`}>Open Vault</Link>
                         </Button>
                       </TableCell>
