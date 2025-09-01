@@ -47,8 +47,10 @@ import { useAccount, useChainId } from "wagmi";
 import { VAULTS, Vault } from "@/lib/constants";
 import { LoadingSpinner } from "@/components/LoadingSpinner"; // Import LoadingSpinner
 
+
 export default function EarnPoolPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params); // unwrap the Promise
+
 
   const pool = VAULTS.find((v) => v.id === id); 
  

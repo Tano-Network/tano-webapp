@@ -12,6 +12,7 @@ export const SUPPORTED_CHAINS = {
 
 export const CONTRACT_ADDRESSES = {
   [SUPPORTED_CHAINS.SEPOLIA]: {
+
     TDOGE_ASSET_MANAGEMENT: "0xA566F07897D73A232540B5376F04122E2b3547e9",
     TDOGE_TOKEN: "0x7a8f8685dA403b4AA0Ea964aD3dbE8771f0F9E2b",
     TDOGE_STAKING_POOL: "0x66c31f33C340d6916b21433f1d9C74d41323a18d",
@@ -84,6 +85,7 @@ export const VAULTS: Vault[] = [
     shortDescription: "The original meme coin, now earning yield",
     coinGeckoId: "dogecoin",
     explorerUrl: "https://dogechain.info/",
+
     evmChain: sepolia.name,
     evmChainId: sepolia.id,
     evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA],
@@ -92,6 +94,7 @@ export const VAULTS: Vault[] = [
     apy: "15.2%",
     stakingStatus: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_STAKING_POOL !== ZeroAddress ? "active" : "inactive",
     stakingDescription: "Stake your tDOGE to earn rewards",
+
   },
   // {
   //   id: "tltc",
@@ -144,6 +147,7 @@ export const VAULTS: Vault[] = [
   //   stakingDescription: "Stake your tBCH to earn rewards",
   // },
   {
+
     id: "txrp",
     name: "tXRP Vault",
     asset: "tXRP",
@@ -167,8 +171,50 @@ export const VAULTS: Vault[] = [
     apy: "0.0%",
     stakingStatus: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_STAKING_POOL !== ZeroAddress ? "active" : "inactive",
     stakingDescription: "Stake your tXRP to earn rewards",
+
   },
+  // {
+  //   id: "tltc",
+  //   name: "tLTC Vault",
+  //   asset: "tLTC",
+  //   coin: "LTC",
+  //   tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN,
+  //   assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT,
+  //   nativeChainName: "Litecoin Testnet",
+  //   nativeAddress: "tltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080",
+  //   icon: "https://assets.coingecko.com/coins/images/2/thumb/litecoin.png",
+  //   iconChar: "Ł",
+  //   color: "from-gray-400 to-gray-600",
+  //   description: "Redeem Litecoin from your tLTC balance on the Litecoin testnet.",
+  //   shortDescription: "Digital silver for the digital age",
+  //   coinGeckoId: "litecoin",
+  //   explorerUrl: "https://sochain.com/testnet/ltc",
+  //   evmChain: sepolia.name, // Added
+  //   evmChainId: sepolia.id, // Added
+  //   evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
+  // },
+  // {
+  //   id: "tbch",
+  //   name: "tBCH Vault",
+  //   asset: "tBCH",
+  //   coin: "BCH",
+  //   tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
+  //   assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT,
+  //   nativeChainName: "Bitcoin Cash Testnet",
+  //   nativeAddress: "bchtest:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2",
+  //   icon: "https://assets.coingecko.com/coins/images/780/thumb/bitcoin-cash-circle.png",
+  //   iconChar: "₿",
+  //   color: "bg-green-500",
+  //   description: "Redeem BCH from your tBCH balance on the Bitcoin Cash testnet.",
+  //   shortDescription: "Peer-to-peer electronic cash system",
+  //   coinGeckoId: "bitcoin-cash",
+  //   explorerUrl: "https://www.blocktrail.com/tBCC",
+  //   evmChain: sepolia.name, // Added
+  //   evmChainId: sepolia.id, // Added
+  //   evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
+  // },
   {
+
     id: "tada",
     name: "tADA Vault",
     asset: "tADA",
@@ -192,6 +238,7 @@ export const VAULTS: Vault[] = [
     apy: "0.0%",
     stakingStatus: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TADA_STAKING_POOL !== ZeroAddress ? "active" : "inactive",
     stakingDescription: "Stake your tADA to earn rewards",
+
   },
 ]
 

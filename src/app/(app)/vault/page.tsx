@@ -231,8 +231,10 @@ const VaultCard = ({
       <CardContent className="space-y-4 relative">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
+
             <div className="text-sm text-muted-foreground">Total Allowance</div>
             <div className="font-semibold group-hover:text-primary transition-colors">{parseFloat(formatUnits(vault.allowance || BigInt(0), 18)).toFixed(2)} {vault.asset}</div>
+
           </div>
           <div className="space-y-1">
             <div className="text-sm text-muted-foreground">APY</div>
@@ -283,7 +285,9 @@ export default function VaultsPage() {
   const [mintedById, setMintedById] = useState<Record<string, string>>({})
   const [totalMintedById, setTotalMintedById] = useState<Record<string, string>>({})
   const [totalLockedAssets, setTotalLockedAssets] = useState<string | null>(null)
+
   const [totalMintedAssetsValue, setTotalMintedAssetsValue] = useState<string | null>(null)
+
   const [isLoading, setIsLoading] = useState(false)
   const [pageLoaded, setPageLoaded] = useState(false)
   const [coinPrices, setCoinPrices] = useState<Record<string, number>>({})
@@ -323,10 +327,12 @@ export default function VaultsPage() {
             const { assetManagementAddress, id, tokenAddress } = vault
 
             if (!assetManagementAddress || assetManagementAddress === ZeroAddress) {
+
               return { id, whitelisted: null, supply: null as bigint | null, mints: null as bigint | null, allowance: null as bigint | null }
             }
             if (!tokenAddress || tokenAddress === ZeroAddress) {
               return { id, whitelisted: null, supply: null as bigint | null, mints: null as bigint | null, allowance: null as bigint | null }
+
             }
 
             try {
@@ -348,6 +354,7 @@ export default function VaultsPage() {
                   functionName: "getMintedAmount",
                   args: address ? [address] : [],
                 }),
+
                 readContract(config, {
                   address: assetManagementAddress as `0x${string}`,
                   abi: assetManagementAbi,
@@ -360,6 +367,7 @@ export default function VaultsPage() {
             } catch (err) {
               console.error(`Error reading vault ${id}:`, err)
               return { id, whitelisted: false, supply: null as bigint | null, mints: null as bigint | null, allowance: null as bigint | null }
+
             }
           }),
         )
@@ -367,6 +375,7 @@ export default function VaultsPage() {
         const newStatus: Record<string, boolean | null> = {}
         const newMinted: Record<string, string> = {}
         const newTotalMinted: Record<string, string> = {}
+
         const newAllowance: Record<string, string> = {}
 
         let totalAllowanceSum = 0;
@@ -377,23 +386,28 @@ export default function VaultsPage() {
           const v = VAULTS.find((x) => x.id === id)
           if (!v) continue
 
+
           if (supply !== null) {
             newTotalMinted[id] = `${formatUnits(supply as bigint, 18)} ${v.asset}`
           }
           if (mints !== null) {
             newMinted[id] = `${formatUnits(mints as bigint, 18)} ${v.asset}`
+
           }
           if (allowance !== null) {
             newAllowance[id] = `${formatUnits(allowance as bigint, 18)} ${v.asset}`
             const price = coinPrices[v.coinGeckoId] || 0;
             totalAllowanceSum += parseFloat(formatUnits(allowance as bigint, 18)) * price;
+
           }
         }
 
         setWhitelistStatus(newStatus)
         setMintedById(newMinted)
         setTotalMintedById(newTotalMinted)
+
         setTotalLockedAssets(`${totalAllowanceSum.toFixed(2)}`);
+
       } catch (error) {
         console.error("Error checking vaults:", error)
         toast({
@@ -407,6 +421,7 @@ export default function VaultsPage() {
     }
 
     checkAllVaults()
+
   }, [isConnected, address, isCorrectNetwork, toast, coinPrices])
 
   useEffect(() => {
@@ -419,6 +434,7 @@ export default function VaultsPage() {
           total += mintedAmount * price;
         }
       });
+
       setTotalMintedAssetsValue(`${total.toFixed(2)}`);
     }
   }, [coinPrices, totalMintedById]);
@@ -492,12 +508,14 @@ export default function VaultsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         <StatCard
           icon={<Lock size={20} className="text-primary" />}
+
           label="Total Allowances (tAssets)"
           value={totalLockedAssets !== null ? `$${totalLockedAssets}` : null}
           description="Across all vaults"
           isLoading={isLoading || totalLockedAssets === null}
           delay={0}
         />
+
         <StatCard
           icon={<Coins size={20} className="text-primary" />}
           label="Total Assets Minted"
@@ -555,6 +573,7 @@ export default function VaultsPage() {
               description: v.shortDescription,
               totalMinted: totalMintedById[v.id] || "0",
               allowance: (VAULTS.find(x => x.id === v.id) as any)?.allowance || BigInt(0),
+
             }
             return (
               <VaultCard
@@ -597,4 +616,6 @@ export default function VaultsPage() {
       </Card>
     </div>
   )
+
 }
+

@@ -16,8 +16,10 @@ import { ZeroAddress } from "ethers"
 import assetManagementAbi from "@/abi/assetManagement.json"
 import assetAbi from "@/abi/asset.json"
 import {
+
   VAULTS,
   Vault,
+
   SUPPORTED_CHAINS,
 } from "@/lib/constants"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
@@ -35,11 +37,14 @@ import {
 import { getCoinPrices } from "@/app/actions/get-prices"; // Add this import
 
 // Define a type for the vault data including fetched values
+
 interface FetchedVault extends Vault {
+
   isWhitelisted?: boolean | null;
   mintableAmount?: bigint;
   allowance?: bigint;
   mintedAmount?: bigint;
+
   totalMinted: string;
 }
 
@@ -47,6 +52,7 @@ const initialVaults: FetchedVault[] = VAULTS.map((vault) => ({
   ...vault,
   totalMinted: "0",
 }));
+
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -106,7 +112,9 @@ export default function InstitutionalDashboardPage() {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
 
+
   const [vaultsData, setVaultsData] = useState<FetchedVault[]>(initialVaults)
+
   const [isLoadingVaultData, setIsLoadingVaultData] = useState(true)
   const [coinPrices, setCoinPrices] = useState<Record<string, number>>({}); // New state for coin prices
 
@@ -147,8 +155,9 @@ export default function InstitutionalDashboardPage() {
             let totalMinted: bigint = BigInt(0);
 
             if (
-              vault.stakingStatus === "active" &&
+            vault.stakingStatus === "active" &&
               vault.assetManagementAddress !== ZeroAddress &&
+
               vault.tokenAddress !== ZeroAddress
             ) {
               try {
@@ -160,26 +169,34 @@ export default function InstitutionalDashboardPage() {
                   supply,
                 ] = await Promise.all([
                   readContract(config, {
+
                     address: vault.assetManagementAddress as `0x${string}`,
                     abi: assetManagementAbi,
+
                     functionName: "isWhitelisted",
                     args: [address],
                   }),
                   readContract(config, {
+
                     address: vault.assetManagementAddress as `0x${string}`,
                     abi: assetManagementAbi,
+
                     functionName: "getMintableAmount",
                     args: [address],
                   }),
                   readContract(config, {
+
                     address: vault.assetManagementAddress as `0x${string}`,
                     abi: assetManagementAbi,
+
                     functionName: "getAllowance",
                     args: [address],
                   }),
                   readContract(config, {
+
                     address: vault.assetManagementAddress as `0x${string}`,
                     abi: assetManagementAbi,
+
                     functionName: "getMintedAmount",
                     args: [address],
                   }),
@@ -227,17 +244,21 @@ export default function InstitutionalDashboardPage() {
   }, [address, isConnected, isCorrectNetwork])
 
   const totalValueLocked = vaultsData.reduce((sum, vault) => {
+
     const price = coinPrices[vault.coinGeckoId] || 0; // Get price for the asset
     return sum + parseFloat(formatUnits(vault.allowance || BigInt(0), 18)) * price;
   }, 0);
 
   const totalAssetsMinted = vaultsData.reduce((sum, vault) => {
     const price = coinPrices[vault.coinGeckoId] || 0; // Get price for the asset
+
     return sum + parseFloat(vault.totalMinted || "0") * price;
   }, 0);
 
   const activeVaultCount = vaultsData.filter(
+
     (v) => v.stakingStatus === "active"
+
   ).length;
 
   return (
@@ -264,27 +285,34 @@ export default function InstitutionalDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           icon={<Lock size={20} className="text-primary" />}
+
           label="Total Allowances (tAssets)"
           value={isLoadingVaultData ? null : `$${totalValueLocked.toFixed(2)}`}
+
           description="Across all active vaults"
           isLoading={isLoadingVaultData}
           delay={0}
         />
         <StatCard
           icon={<Coins size={20} className="text-primary" />}
+
           label="Total Assets Minted"
           value={isLoadingVaultData ? null : `$${totalAssetsMinted.toFixed(2)}`}
           description="Total minted assets in $"
+
           isLoading={isLoadingVaultData}
           delay={100}
         />
         <StatCard
+
           icon={<Shield size={20} className="text-primary" />}
           label="Active Vaults"
           value={isLoadingVaultData ? null : activeVaultCount.toString()}
           description="Currently operational"
           isLoading={isLoadingVaultData}
+
           delay={200}
+
         />
       </div>
 
@@ -324,7 +352,9 @@ export default function InstitutionalDashboardPage() {
                       <TableCell>{parseFloat(formatUnits(vault.mintableAmount || BigInt(0), 18)).toFixed(2)}</TableCell>
                       <TableCell>{parseFloat(formatUnits(vault.allowance || BigInt(0), 18)).toFixed(2) }</TableCell>
                       <TableCell>
+
                         <Button asChild size="sm" disabled={vault.stakingStatus === "inactive"}>
+
                           <Link href={`/vault/${vault.id}`}>Open Vault</Link>
                         </Button>
                       </TableCell>

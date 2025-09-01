@@ -49,6 +49,7 @@ interface EarnPool {
   coinGeckoId: string; // Added for price fetching
 }
 
+
 const initialEarnPools: EarnPool[] = VAULTS.map((vault) => ({
   id:  vault.id,
   asset: vault.asset,
@@ -64,6 +65,7 @@ const initialEarnPools: EarnPool[] = VAULTS.map((vault) => ({
   description: vault.stakingDescription,
   coinGeckoId: vault.coinGeckoId,
 }));
+
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -442,7 +444,9 @@ export default function EarnDashboardPage() {
     return sum + stakedAmount * price;
   }, 0);
 
+
   
+
 
   // Placeholder for total rewards distributed (needs contract function or historical data)
   const totalRewardsDistributed = "0"; // Keep as placeholder for now
@@ -515,6 +519,7 @@ export default function EarnDashboardPage() {
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
           Total Staked by Asset
         </h2>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {earnPoolsData.map((pool) => (
             <Card key={pool.id}>
@@ -532,6 +537,7 @@ export default function EarnDashboardPage() {
               </CardContent>
             </Card>
           ))}
+
         </div>
       </div>
 
