@@ -531,7 +531,7 @@ export default function VaultsPage() {
               asset: v.asset,
               icon: v.iconChar,
               totalLocked: "0.00",
-              apy: "0.0%",
+              apy: v.apy,
               minted: mintedById[v.id] || "0.00",
               whitelistContract: v.assetManagementAddress,
               whitelistAbi: assetManagementAbi,

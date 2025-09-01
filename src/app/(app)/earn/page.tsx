@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoadingSpinner } from "@/components/LoadingSpinner"; // Corrected import
 import { cn } from "@/lib/utils";
-import { CONTRACT_ADDRESSES, SUPPORTED_CHAINS } from "@/lib/constants";
+import { VAULTS, SUPPORTED_CHAINS, Vault } from "@/lib/constants";
 import earnStakingAbi from "@/abi/earnStaking.json";
 import { formatUnits, ZeroAddress } from "ethers";
 import { getCoinPrices } from "@/app/actions/get-prices";
@@ -44,98 +44,26 @@ interface EarnPool {
   apy: string; // Placeholder for now
   myDeposit: string; // Will be fetched
   color: string;
-  status: string; // "active" | "coming-soon"
+  status: 'active' | 'inactive';
   description: string;
   coinGeckoId: string; // Added for price fetching
 }
 
-// Initial earn pools with placeholders for fetched data
-const initialEarnPools: EarnPool[] = [
-  {
-    id: "doge",
-    asset: "tDOGE",
-    icon: "Ð",
-    contractAddress:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_STAKING_POOL,
-    stakingTokenAddress:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_TOKEN,
-    decimals: 18, // Assuming 18 decimals for tDOGE
-    totalStaked: "0.00",
-    apy: "15.2%",
-    myDeposit: "0.00",
-    color: "from-yellow-500 to-orange-500",
-    status:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_STAKING_POOL !==
-      ZeroAddress
-        ? "active"
-        : "coming-soon",
-    description: "Stake your tDOGE to earn rewards",
-    coinGeckoId: "dogecoin",
-  },
-  {
-    id: "litecoin",
-    asset: "tLTC",
-    icon: "Ł",
-    contractAddress:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_STAKING_POOL, // Placeholder, will be updated
-    stakingTokenAddress:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN, // Placeholder, will be updated
-    decimals: 18, // Assuming 18 decimals for tLTC
-    totalStaked: "0.00",
-    apy: "0.0%",
-    myDeposit: "0.00",
-    color: "from-gray-400 to-gray-600",
-    status:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_STAKING_POOL !==
-      ZeroAddress
-        ? "active"
-        : "coming-soon",
-    description: "Stake your tLTC to earn rewards",
-    coinGeckoId: "litecoin",
-  },
-  {
-    id: "bitcoin_cash",
-    asset: "tBCH",
-    icon: "₿",
-    contractAddress:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_STAKING_POOL, // Placeholder, will be updated
-    stakingTokenAddress:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN, // Placeholder, will be updated
-    decimals: 18, // Assuming 18 decimals for tBCH
-    totalStaked: "0.00",
-    apy: "0.0%",
-    myDeposit: "0.00",
-    color: "from-green-500 to-emerald-600",
-    status:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_STAKING_POOL !==
-      ZeroAddress
-        ? "active"
-        : "coming-soon",
-    description: "Stake your tBCH to earn rewards",
-    coinGeckoId: "bitcoin-cash",
-  },
-  {
-    id: "ripple",
-    asset: "tXRP",
-    icon: "X",
-    contractAddress:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_STAKING_POOL,
-    stakingTokenAddress:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
-    decimals: 18, // Assuming 18 decimals for tXRP
-    totalStaked: "0.00",
-    apy: "0.0%",
-    myDeposit: "0.00",
-    color: "from-blue-400 to-indigo-600",
-    status:
-      CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_STAKING_POOL !==
-      ZeroAddress
-        ? "active"
-        : "coming-soon",
-    description: "Stake your tXRP to earn rewards",
-    coinGeckoId: "ripple",
-  },
-];
+const initialEarnPools: EarnPool[] = VAULTS.map((vault) => ({
+  id: vault.id.startsWith('t') ? vault.id.substring(1) : vault.id,
+  asset: vault.asset,
+  icon: vault.iconChar,
+  contractAddress: vault.stakingContractAddress,
+  stakingTokenAddress: vault.tokenAddress,
+  decimals: vault.stakingDecimals,
+  totalStaked: "0.00",
+  apy: vault.apy,
+  myDeposit: "0.00",
+  color: vault.color,
+  status: vault.stakingStatus,
+  description: vault.stakingDescription,
+  coinGeckoId: vault.coinGeckoId,
+}));
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -225,10 +153,10 @@ const EarnPoolCard = ({
   const [isHovered, setIsHovered] = useState(false);
 
   const getStatusBadge = () => {
-    if (pool.status === "coming-soon") {
+    if (pool.status === "inactive") {
       return (
-        <Badge variant="secondary" className="animate-pulse">
-          Coming Soon
+        <Badge variant="secondary">
+          Inactive
         </Badge>
       );
     }
@@ -246,7 +174,7 @@ const EarnPoolCard = ({
     return <Skeleton className="h-5 w-20" />;
   };
 
-  const isDisabled = pool.status === "coming-soon";
+  const isDisabled = pool.status === "inactive";
 
   return (
     <Card
@@ -355,8 +283,8 @@ const EarnPoolCard = ({
               <LoadingSpinner size="sm" />
               Checking...
             </div>
-          ) : pool.status === "coming-soon" ? (
-            "Coming Soon"
+          ) : pool.status === "inactive" ? (
+            "Inactive"
           ) : (
             "Open Pool"
           )}
@@ -496,7 +424,7 @@ export default function EarnDashboardPage() {
    * @param pool - The earn pool object containing pool details.
    */
   const onSelectPool = (pool: EarnPool) => {
-    if (pool.status === "coming-soon") return;
+    if (pool.status === "inactive") return;
     router.push(`/earn/${pool.id}`);
   };
 
@@ -514,15 +442,7 @@ export default function EarnDashboardPage() {
     return sum + stakedAmount * price;
   }, 0);
 
-  // Calculate total staked for each asset type
-  const totalStakedDOGE =
-    earnPoolsData.find((p) => p.id === "doge")?.totalStaked || "0.00";
-  const totalStakedLTC =
-    earnPoolsData.find((p) => p.id === "litecoin")?.totalStaked || "0.00";
-  const totalStakedBCH =
-    earnPoolsData.find((p) => p.id === "bitcoin_cash")?.totalStaked || "0.00";
-  const totalStakedXRP =
-    earnPoolsData.find((p) => p.id === "ripple")?.totalStaked || "0.00";
+  
 
   // Placeholder for total rewards distributed (needs contract function or historical data)
   const totalRewardsDistributed = "0"; // Keep as placeholder for now
@@ -595,63 +515,23 @@ export default function EarnDashboardPage() {
         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
           Total Staked by Asset
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">tDOGE Staked</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingData ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                <div className="text-2xl font-bold">
-                  {Number.parseFloat(totalStakedDOGE).toFixed(2)} tDOGE
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">tLTC Staked</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingData ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                <div className="text-2xl font-bold">
-                  {Number.parseFloat(totalStakedLTC).toFixed(2)} tLTC
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">tBCH Staked</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingData ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                <div className="text-2xl font-bold">
-                  {Number.parseFloat(totalStakedBCH).toFixed(2)} tBCH
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">tXRP Staked</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingData ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                <div className="text-2xl font-bold">
-                  {Number.parseFloat(totalStakedXRP).toFixed(2)} tXRP
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {earnPoolsData.map((pool) => (
+            <Card key={pool.id}>
+              <CardHeader>
+                <CardTitle className="text-lg">{pool.asset} Staked</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingData ? (
+                  <Skeleton className="h-8 w-32" />
+                ) : (
+                  <div className="text-2xl font-bold">
+                    {Number.parseFloat(pool.totalStaked).toFixed(2)} {pool.asset}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
 

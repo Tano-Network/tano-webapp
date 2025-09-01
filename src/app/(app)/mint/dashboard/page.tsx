@@ -27,7 +27,7 @@ import {
 import { VAULTS } from "@/lib/constants"
 import { BackButton } from "@/components/BackButton"
 
-interface MintRequest {
+interface MintRecord {
   id: string
   evmAddress: string
   evmChain: string
@@ -50,12 +50,12 @@ interface MintRequest {
 
 export default function MintDashboard() {
   const { address, isConnected } = useAccount()
-  const [userRequests, setUserRequests] = useState<MintRequest[]>([])
-  const [allRequests, setAllRequests] = useState<MintRequest[]>([])
+  const [userRecords, setUserRecords] = useState<MintRecord[]>([])
+  const [allRecords, setAllRecords] = useState<MintRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
 
-  const fetchRequests = async () => {
+  const fetchRecords = async () => {
     try {
       setIsLoading(true)
 
@@ -63,7 +63,7 @@ export default function MintDashboard() {
       const allResponse = await fetch("/api/mint-records")
       if (allResponse.ok) {
         const allData = await allResponse.json()
-        setAllRequests(allData.requests || [])
+        setAllRecords(allData.requests || [])
       }
 
       // Fetch user requests if connected
@@ -71,7 +71,7 @@ export default function MintDashboard() {
         const userResponse = await fetch(`/api/mint-records?address=${address}`)
         if (userResponse.ok) {
           const userData = await userResponse.json()
-          setUserRequests(userData.requests || [])
+          setUserRecords(userData.requests || [])
         }
       }
     } catch (error: any) {
@@ -87,7 +87,7 @@ export default function MintDashboard() {
   }
 
   useEffect(() => {
-    fetchRequests()
+    fetchRecords()
   }, [address, isConnected])
 
   const getStatusIcon = (status: string) => {
@@ -125,40 +125,20 @@ export default function MintDashboard() {
   }
 
   const getVaultInfo = (vaultId: string) => {
-    return VAULTS.find((vault) => vault.id === vaultId)
+    if (!vaultId) return undefined;
+    const cleanVaultId = vaultId.toLowerCase().replace(/\s+/g, '');
+    return VAULTS.find((vault) =>
+      vault.id.toLowerCase().replace(/\s+/g, '') === cleanVaultId ||
+      vault.coin.toLowerCase().replace(/\s+/g, '') === cleanVaultId ||
+      vault.asset.toLowerCase().replace(/\s+/g, '') === cleanVaultId ||
+      vault.coinGeckoId.toLowerCase().replace(/\s+/g, '') === cleanVaultId ||
+      vault.name.toLowerCase().replace(/\s+/g, '') === cleanVaultId
+    );
   }
 
-  const getVaultIcon = (vaultId: string) => {
-    switch (vaultId.toLowerCase()) {
-      case "doge":
-      case "dogecoin":
-        return "Ð"
-      case "ltc":
-      case "litecoin":
-        return "Ł"
-      case "bch":
-      case "bitcoin-cash":
-        return "₿"
-      default:
-        return vaultId.charAt(0).toUpperCase()
-    }
-  }
+  
 
-  const getVaultIconColor = (vaultId: string) => {
-    switch (vaultId.toLowerCase()) {
-      case "doge":
-      case "dogecoin":
-        return "from-yellow-500 to-orange-500"
-      case "ltc":
-      case "litecoin":
-        return "from-gray-400 to-gray-600"
-      case "bch":
-      case "bitcoin-cash":
-        return "from-green-500 to-emerald-600"
-      default:
-        return "from-blue-500 to-purple-600"
-    }
-  }
+  
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -177,7 +157,7 @@ export default function MintDashboard() {
     title,
     isUserTable = false,
   }: {
-    requests: MintRequest[]
+    requests: MintRecord[]
     title: string
     isUserTable?: boolean
   }) => (
@@ -199,7 +179,7 @@ export default function MintDashboard() {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchRequests}
+            onClick={fetchRecords}
             disabled={isLoading}
             className="flex items-center gap-2 bg-transparent"
           >
@@ -264,13 +244,25 @@ export default function MintDashboard() {
                     <TableRow key={request.id} className={isUserTable ? "bg-blue-50/50 dark:bg-blue-950/50" : ""}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div
-                            className={`bg-gradient-to-br ${getVaultIconColor(request.vaultId)} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg`}
-                          >
-                            {getVaultIcon(request.vaultId)}
-                          </div>
+                          {vault ? (
+                            vault.icon ? (
+                              <img src={vault.icon} alt={vault.name} className="w-8 h-8 rounded-full" />
+                            ) : (
+                              <div
+                                className={`bg-gradient-to-br ${vault.color} text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg`}
+                              >
+                                {vault.iconChar}
+                              </div>
+                            )
+                          ) : (
+                            <div
+                              className={`bg-gradient-to-br from-gray-400 to-gray-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg`}
+                            >
+                              ?
+                            </div>
+                          )}
                           <div>
-                            <div className="font-medium">{vault?.name || `${request.vaultId.toUpperCase()}`}</div>
+                            <div className="font-medium">{vault?.name || 'Unknown Vault'}</div>
                             <div className="text-xs text-muted-foreground">{request.vaultChain}</div>
                           </div>
                         </div>
@@ -403,11 +395,11 @@ export default function MintDashboard() {
         <div className="space-y-8">
           {/* User Requests Table (if connected) */}
           {isConnected && address && (
-            <MintRecordTable requests={userRequests} title="Your Mint Records" isUserTable={true} />
+            <MintRecordTable requests={userRecords} title="Your Mint Records" isUserTable={true} />
           )}
 
           {/* All Requests Table */}
-          <MintRecordTable requests={allRequests} title="All Mint Records" isUserTable={false} />
+          <MintRecordTable requests={allRecords} title="All Mint Records" isUserTable={false} />
         </div>
       </div>
     </div>
