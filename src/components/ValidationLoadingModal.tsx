@@ -1,84 +1,115 @@
-"use client"
+'use client'
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Loader2, Shield, Clock, Zap } from "lucide-react"
+import { Loader2, CheckCircle, AlertTriangle } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { useEffect, useState } from "react"
+import { VAULTS } from "../lib/constants"
 
 interface ValidationLoadingModalProps {
   isOpen: boolean
   onClose?: () => void
+  vaultId: string
+  isValidating: boolean
+  validationResult: any
 }
 
-export function ValidationLoadingModal({ isOpen, onClose }: ValidationLoadingModalProps) {
-  const [progress, setProgress] = useState(0)
-  const [currentStep, setCurrentStep] = useState(0)
+export function ValidationLoadingModal({
+  isOpen,
+  onClose,
+  vaultId,
+  isValidating,
+  validationResult,
+}: ValidationLoadingModalProps) {
+  const [startTime, setStartTime] = useState<number | null>(null)
+  const [elapsedTime, setElapsedTime] = useState(0)
 
-  const steps = [
-    { icon: Shield, label: "Verifying transaction on blockchain", duration: 3000 },
-    { icon: Zap, label: "Generating cryptographic proof", duration: 4000 },
-    { icon: Clock, label: "Finalizing validation", duration: 2000 },
-  ]
+  const vault = VAULTS.find((v) => v.id === vaultId)
 
   useEffect(() => {
-    if (!isOpen) {
-      setProgress(0)
-      setCurrentStep(0)
-      return
+    let timer: NodeJS.Timeout | undefined
+
+    if (isOpen && isValidating) {
+      if (!startTime) {
+        setStartTime(Date.now())
+      }
+      timer = setInterval(() => {
+        if (startTime) {
+          setElapsedTime(Date.now() - startTime)
+        }
+      }, 1000)
+    } else if (!isValidating && startTime) {
+      setElapsedTime(Date.now() - startTime)
+      setStartTime(null) // Reset for next time
     }
 
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 90) return prev // Stop at 90% until actual completion
-        return prev + 2
-      })
-    }, 100)
-
-    const stepInterval = setInterval(() => {
-      setCurrentStep((prev) => (prev + 1) % steps.length)
-    }, 3000)
+    if (!isOpen) {
+      setStartTime(null)
+      setElapsedTime(0)
+    }
 
     return () => {
-      clearInterval(interval)
-      clearInterval(stepInterval)
+      if (timer) {
+        clearInterval(timer)
+      }
     }
-  }, [isOpen])
+  }, [isOpen, isValidating, startTime])
 
-  const CurrentIcon = steps[currentStep]?.icon || Shield
+  const formatTime = (ms: number) => {
+    const minutes = Math.floor(ms / 60000)
+    const seconds = ((ms % 60000) / 1000).toFixed(0)
+    return `${minutes}m ${seconds}s`
+  }
+
+  const hasError = validationResult && validationResult.error
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-center">
-            <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
-            Validating Transaction
+            {isValidating ? (
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+            ) : hasError ? (
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+            ) : (
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            )}
+            {isValidating ? "Waiting for Verifier" : hasError ? "Verification Failed" : "Verification Done"}
           </DialogTitle>
           <DialogDescription className="text-center">
-            Please wait while we validate your Dogecoin transaction. This process may take 1-3 minutes.
+            {isValidating
+              ? `Please wait till we get a response from the verifier.`
+              : hasError
+              ? `Validation failed: ${validationResult.error}`
+              : `Validation completed in ${formatTime(elapsedTime)}`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <Progress value={progress} className="h-2" />
-            <p className="text-sm text-muted-foreground text-center">{progress}% complete</p>
-          </div>
+          {isValidating ? (
+            <div className="space-y-2">
+              <Progress value={undefined} className="h-2 w-full animate-pulse" />
+              <p className="text-sm text-muted-foreground text-center">Generating cryptographic proof...</p>
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                {hasError
+                  ? "There was an issue validating your transaction."
+                  : "Your transaction has been successfully validated."}
+              </p>
+            </div>
+          )}
 
-          {/* Current Step */}
-          <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-            <CurrentIcon className="h-5 w-5 text-blue-600 animate-pulse" />
-            <span className="text-sm font-medium">{steps[currentStep]?.label}</span>
-          </div>
-
-          {/* Info Message */}
           <div className="text-center space-y-2">
-            <p className="text-sm text-muted-foreground">
-              We're generating a cryptographic proof of your Dogecoin transaction using advanced zero-knowledge
-              technology.
+            <p className="text-xs text-muted-foreground">
+              {isValidating
+                ? "Request sent. Please wait while it is being validated by the server. Do not close this window."
+                : hasError
+                ? "You can close this window and try again."
+                : "Validation done successfully."}
             </p>
-            <p className="text-xs text-muted-foreground">Please keep this window open and do not refresh the page.</p>
           </div>
         </div>
       </DialogContent>

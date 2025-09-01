@@ -10,8 +10,12 @@ export const SUPPORTED_CHAINS = {
 
 export const CONTRACT_ADDRESSES = {
   [SUPPORTED_CHAINS.SEPOLIA]: {
-    TDOGE_ASSET_MANAGEMENT: "0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48",
-    TDOGE_TOKEN: "0x46507E8929Fe9C20c8914fc9036829F6e7740D9D",
+    
+    // TDOGE_ASSET_MANAGEMENT: "0x6538cE279184142B72A057cAe5e5b2D475Da0551",
+    // TDOGE_TOKEN: "0x46507E8929Fe9C20c8914fc9036829F6e7740D9D",
+    // TDOGE_ASSET_MANAGEMENT: "0x6183367a204F2E2E9638d2ee5fDb281dB6f42F48" ,
+    TDOGE_ASSET_MANAGEMENT: "0xA566F07897D73A232540B5376F04122E2b3547e9",
+    TDOGE_TOKEN: "0x7a8f8685dA403b4AA0Ea964aD3dbE8771f0F9E2b",
     TDOGE_STAKING_POOL: "0x839D1424D64ad061e9f612a5f9A438fe9619D5B6",
     TLTC_TOKEN: "0xC1819d63807e34bb4a120abF1eF58a6D140964Ec",
     TLTC_STAKING_POOL: "0x479641cb71FC11646e551e1F578707a7bBA673a8",
@@ -19,8 +23,13 @@ export const CONTRACT_ADDRESSES = {
     TBCH_TOKEN: "0x0000000000000000000000000000000000000000",
     TBCH_STAKING_POOL: "0x0000000000000000000000000000000000000000",
     TBCH_ASSET_MANAGEMENT: "0x0000000000000000000000000000000000000000",
+    TXRP_TOKEN: "0x165d03D3Df6443B87b4B7a6268fd13d37C5e3127",
+    TXRP_STAKING_POOL: "0x0000000000000000000000000000000000000000",
+    TXRP_ASSET_MANAGEMENT: "0x25920221ff112bb8902Bc0A82a6A8744717A8323",
+    TADA_TOKEN: "0xF81e5CA71ACbF721578c574Ed65Fe3DE1a6151A5", 
+    TADA_ASSET_MANAGEMENT: "0x0B6F45a00D5f28A8641B64b95a396C248D72339e", 
+    TADA_STAKING_POOL: "0x0000000000000000000000000000000000000ADA2", // Placeholder
   },
-  // Add other networks as needed
 } satisfies Record<number, Record<string, `0x${string}`>>;
 
 export const EXPLORER_URLS = {
@@ -45,49 +54,100 @@ export const VAULTS = [
     // nativeAddress: "DPGGRKJaKtTkNhc6uodtdyQEyv8RsWxL6H",
     nativeAddress: "DHGrS3MYGyKzRVdMNxziTPF7QXvaYoEndA",
     icon: "https://assets.coingecko.com/coins/images/5/thumb/dogecoin.png",
+    iconChar: "Ð",
     color: "from-yellow-500 to-orange-500",
     description: "Redeem DOGE from your tDOGE balance on the Dogecoin testnet.",
+    shortDescription: "The original meme coin, now earning yield",
     coinGeckoId: "dogecoin",
-    explorerUrl: "https://sochain.com/tx/DOGETEST",
+    explorerUrl: "https://dogechain.info/",
     evmChain: sepolia.name, // Added
     evmChainId: sepolia.id, // Added
     evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
+
+    
   },
   {
-    id: "tltc",
-    name: "tLTC Vault",
-    asset: "tLTC",
-    coin: "LTC",
-    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN,
-    assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT,
-    nativeChainName: "Litecoin Testnet",
-    nativeAddress: "tltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080",
-    icon: "https://assets.coingecko.com/coins/images/2/thumb/litecoin.png",
-    color: "from-gray-400 to-gray-600",
-    description: "Redeem Litecoin from your tLTC balance on the Litecoin testnet.",
-    coinGeckoId: "litecoin",
-    explorerUrl: "https://sochain.com/testnet/ltc",
-    evmChain: sepolia.name, // Added
-    evmChainId: sepolia.id, // Added
-    evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
+    id: "tada",
+    name: "tADA Vault",
+    asset: "tADA",
+    coin: "ADA",
+    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TADA_TOKEN,
+    assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TADA_ASSET_MANAGEMENT,
+    nativeChainName: "Cardano",
+    nativeAddress: "addr1qyvxngqhhvzunlxlkw4f9m6nep00spqtmrlvfgynmrq5q7r0mjnf84mnk78ytza3sunyvqs3llehvfjuwvk338d69t2qqag5yl", // Placeholder for Cardano testnet address
+    icon: "https://assets.coingecko.com/coins/images/975/thumb/cardano.png", // Cardano icon
+    iconChar: "₳",
+    color: "from-blue-500 to-white", // Example color for Cardano
+    description: "Redeem ADA from your tADA balance on the Cardano blockchain.",
+    shortDescription: "Cardano's native asset, now earning yield",
+    coinGeckoId: "cardano",
+    explorerUrl: "https://testnet.cardanoscan.io/transaction/", // Placeholder for Cardano testnet explorer
+    evmChain: sepolia.name,
+    evmChainId: sepolia.id,
+    evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA],
+
   },
+  // {
+  //   id: "tltc",
+  //   name: "tLTC Vault",
+  //   asset: "tLTC",
+  //   coin: "LTC",
+  //   tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_TOKEN,
+  //   assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TLTC_ASSET_MANAGEMENT,
+  //   nativeChainName: "Litecoin Testnet",
+  //   nativeAddress: "tltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kygt080",
+  //   icon: "https://assets.coingecko.com/coins/images/2/thumb/litecoin.png",
+  //   iconChar: "Ł",
+  //   color: "from-gray-400 to-gray-600",
+  //   description: "Redeem Litecoin from your tLTC balance on the Litecoin testnet.",
+  //   shortDescription: "Digital silver for the digital age",
+  //   coinGeckoId: "litecoin",
+  //   explorerUrl: "https://sochain.com/testnet/ltc",
+  //   evmChain: sepolia.name, // Added
+  //   evmChainId: sepolia.id, // Added
+  //   evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
+  // },
+  // {
+  //   id: "tbch",
+  //   name: "tBCH Vault",
+  //   asset: "tBCH",
+  //   coin: "BCH",
+  //   tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
+  //   assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT,
+  //   nativeChainName: "Bitcoin Cash Testnet",
+  //   nativeAddress: "bchtest:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2",
+  //   icon: "https://assets.coingecko.com/coins/images/780/thumb/bitcoin-cash-circle.png",
+  //   iconChar: "₿",
+  //   color: "bg-green-500",
+  //   description: "Redeem BCH from your tBCH balance on the Bitcoin Cash testnet.",
+  //   shortDescription: "Peer-to-peer electronic cash system",
+  //   coinGeckoId: "bitcoin-cash",
+  //   explorerUrl: "https://www.blocktrail.com/tBCC",
+  //   evmChain: sepolia.name, // Added
+  //   evmChainId: sepolia.id, // Added
+  //   evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
+  // },
   {
-    id: "tbch",
-    name: "tBCH Vault",
-    asset: "tBCH",
-    coin: "BCH",
-    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
-    assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_ASSET_MANAGEMENT,
-    nativeChainName: "Bitcoin Cash Testnet",
-    nativeAddress: "bchtest:qr6m7j9njldwwzlg9v7v53unlr4jkmx6eylep8ekg2",
-    icon: "https://assets.coingecko.com/coins/images/780/thumb/bitcoin-cash-circle.png",
-    color: "bg-green-500",
-    description: "Redeem BCH from your tBCH balance on the Bitcoin Cash testnet.",
-    coinGeckoId: "bitcoin-cash",
-    explorerUrl: "https://www.blocktrail.com/tBCC",
-    evmChain: sepolia.name, // Added
-    evmChainId: sepolia.id, // Added
-    evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA], // Added
+
+    id: "txrp",
+    name: "tXRP Vault",
+    asset: "tXRP",
+    coin: "XRP",
+    tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
+    assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_ASSET_MANAGEMENT,
+    nativeChainName: "XRP Testnet",
+    nativeAddress: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+    icon: "https://assets.coingecko.com/coins/images/44/thumb/xrp-symbol-white-128.png",
+    iconChar: "X",
+    color: "from-blue-400 to-indigo-600",
+    description: "Redeem XRP from your tXRP balance on the XRP testnet.",
+    shortDescription: "The digital asset for payments",
+    coinGeckoId: "ripple",
+    explorerUrl: "https://xrpscan.com",
+    evmChain: sepolia.name,
+    evmChainId: sepolia.id,
+    evmExplorerUrl: EXPLORER_URLS[SUPPORTED_CHAINS.SEPOLIA],
+
   },
 ]
 export const DEFAULT_INSTITUTIONAL_NATIVE_ADDRESS = "INSTITUTIONAL_DEFAULT_ADDRESS_PLACEHOLDER"; // Placeholder for institutional default address

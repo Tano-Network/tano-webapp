@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { MintFormData } from "@/app/(app)/mint/page"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,59 +17,25 @@ interface Props {
   onComplete: () => void
 }
 
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 export function MintStepFour({ formData, validationData, onBack, onComplete }: Props) {
-  const assetManagementAddress = "0x6538cE279184142B72A057cAe5e5b2D475Da0551";
   const { toast } = useToast()
   const { address } = useAccount()
   const vault = VAULTS.find((v) => v.id === formData.vaultId)
+  const assetManagementAddress = vault?.assetManagementAddress
 
   const [isMinting, setIsMinting] = useState(false)
   const [mintTxHash, setMintTxHash] = useState<string>("")
+  const [mintingError, setMintingError] = useState<string | null>(null)
+  const [isErrorExpanded, setIsErrorExpanded] = useState(false)
 
   const { writeContractAsync, data: hash, error, isPending } = useWriteContract()
 
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash,
-  })
+  const handleMintSuccess = async (txHash: string) => {
+    if (!txHash) return
 
-  const handleMint = async () => {
-    if (!assetManagementAddress || !validationData?.proof || !address) {
-      toast({
-        title: "Missing Data",
-        description: "Required minting data is missing. Please go back and validate again.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsMinting(true)
-
-    try {
-      console.log("Minting with proof:", validationData);
-      await writeContractAsync({
-        address: assetManagementAddress as `0x${string}`,
-        abi: Testabi,
-        functionName: "mintWithZk",
-        args: [validationData.proof|| "0x", validationData.publicValues || "0x"],
-      })
-
-      toast({
-        title: "Minting Transaction Submitted",
-        description: "Your minting transaction has been submitted to the blockchain.",
-      })
-    } catch (error: any) {
-      console.error("Minting error:", error)
-      toast({
-        title: "Minting Failed",
-        description: error.message || "Failed to submit minting transaction.",
-        variant: "destructive",
-      })
-      setIsMinting(false)
-    }
-  }
-
-  const handleMintSuccess = async () => {
-    if (!hash) return
 
     try {
       // Create mint record with both native tx hash and minting tx hash
@@ -84,7 +50,9 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
           userAddress: address,
           userAddressNative: validationData.senderAddress,
           nativeTxHash: validationData.txHash,
-          mintTxHash: hash,
+
+          mintTxHash: txHash,
+
           amount: validationData.amount,
           status: "completed",
           proofData: validationData.proof,
@@ -111,11 +79,90 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
     }
   }
 
-  // Monitor transaction confirmation
-  if (isConfirmed && hash && !mintTxHash) {
-    setMintTxHash(hash)
-    handleMintSuccess()
+
+  const {
+    data: receipt,
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+    isError: isMintingError,
+    error: mintingTxError,
+  } = useWaitForTransactionReceipt({
+    hash,
+  })
+
+  useEffect(() => {
+    if (isConfirmed && receipt) {
+      setMintTxHash(receipt.transactionHash)
+      toast({
+        title: "Transaction Confirmed!",
+        description: (
+          <a
+            href={`${vault?.evmExplorerUrl}/tx/${receipt.transactionHash}`}
+            target="_blank"
+
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 underline hover:no-underline"
+          >
+            View on Explorer <ExternalLink className="h-3 w-3" />
+          </a>
+        ),
+      })
+      handleMintSuccess(receipt.transactionHash)
+    }
+  }, [isConfirmed, receipt])
+
+  useEffect(() => {
+    if (isMintingError && mintingTxError) {
+      setMintingError(mintingTxError.message)
+      toast({
+        title: "Minting Failed",
+        description: mintingTxError.message,
+        variant: "destructive",
+      })
+      setIsMinting(false)
+    }
+  }, [isMintingError, mintingTxError])
+
+  const handleMint = async () => {
+    setMintingError(null)
+    setIsErrorExpanded(false)
+    if (!assetManagementAddress || assetManagementAddress === ZERO_ADDRESS || !validationData?.proof || !address) {
+      toast({
+        title: "Missing Data or Contract Not Ready",
+        description:
+          "Required minting data is missing or the contract for this asset is not yet available. Please go back and validate again.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsMinting(true)
+
+    try {
+      console.log("Minting with proof:", validationData)
+      await writeContractAsync({
+        address: assetManagementAddress as `0x${string}`,
+        abi: Testabi,
+        functionName: "mintWithZk",
+        args: [
+          validationData.proof || "0x",
+          validationData.publicValues || "0x",
+        ],
+      })
+    } catch (error: any) {
+      console.error("Minting error:", error)
+      setMintingError(error.message || "Failed to submit minting transaction.")
+      toast({
+        title: "Minting Failed",
+        description: error.message || "Failed to submit minting transaction.",
+        variant: "destructive",
+      })
+      setIsMinting(false)
+    }
   }
+
+  const isContractReady = assetManagementAddress && assetManagementAddress !== ZERO_ADDRESS;
+
 
   return (
     <div className="space-y-6">
@@ -137,34 +184,68 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
             </div>
             <div className="space-y-2">
               <h4 className="font-medium">Mint Details</h4>
-              <p className="text-sm text-muted-foreground">Amount: {validationData.amount} DOGE</p>
+
+              <p className="text-sm text-muted-foreground">Amount: {validationData.amount} {vault?.coin}</p>
+
               <p className="text-sm text-muted-foreground">Native Tx: {validationData.txHash.slice(0, 10)}...</p>
               <p className="text-sm text-muted-foreground">Sender: {validationData.senderAddress}</p>
             </div>
           </div>
 
-          <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
-            <CheckCircle className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800 dark:text-blue-200">
-              <strong>Ready to Mint:</strong> Your transaction has been validated and the zero-knowledge proof is ready.
-              Click the button below to execute the minting smart contract.
-            </AlertDescription>
-          </Alert>
 
-          {error && (
-            <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800 dark:text-red-200">
-                <strong>Minting Error:</strong> {error.message}
+          {!isContractReady && (
+            <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+                <strong>Contract Not Available:</strong> Minting for {vault?.name} is not yet enabled. Please check back later.
               </AlertDescription>
             </Alert>
           )}
 
-          {hash && (
-            <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800 dark:text-green-200">
-                <strong>Transaction Submitted:</strong> Your minting transaction has been submitted.
+          {isContractReady && !mintingError && !isConfirming && !isConfirmed && (
+            <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+              <CheckCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800 dark:text-blue-200">
+                <strong>Ready to Mint:</strong> Your transaction has been validated and the zero-knowledge proof is ready.
+                Click the button below to execute the minting smart contract.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {mintingError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="break-words">
+                {mintingError.length > 100 ? (
+                  isErrorExpanded ? (
+                    <>
+                      {mintingError}
+                      <Button variant="link" className="p-0 h-auto ml-2" onClick={() => setIsErrorExpanded(false)}>
+                        View Less
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {`${mintingError.slice(0, 100)}... `}
+                      <Button variant="link" className="p-0 h-auto" onClick={() => setIsErrorExpanded(true)}>
+                        View More
+                      </Button>
+                    </>
+                  )
+                ) : (
+                  mintingError
+                )}
+
+              </AlertDescription>
+            </Alert>
+          )}
+
+
+          {isConfirming && (
+            <Alert className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
+              <Loader2 className="h-4 w-4 text-orange-600 animate-spin" />
+              <AlertDescription className="text-orange-800 dark:text-orange-200">
+                <strong>Transaction Submitted:</strong> Waiting for confirmation...
                 <br />
                 <a
                   href={`${vault?.evmExplorerUrl}/tx/${hash}`}
@@ -177,6 +258,26 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
               </AlertDescription>
             </Alert>
           )}
+
+          {isConfirmed && (
+            <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800 dark:text-green-200">
+                <strong>Transaction Confirmed!</strong>
+
+                <br />
+                <a
+                  href={`${vault?.evmExplorerUrl}/tx/${hash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 underline hover:no-underline"
+                >
+                  View on Explorer <ExternalLink className="h-3 w-3" />
+                </a>
+              </AlertDescription>
+            </Alert>
+          )}
+
         </CardContent>
       </Card>
 
@@ -186,7 +287,9 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
         </Button>
         <Button
           onClick={handleMint}
-          disabled={isMinting || isPending || isConfirming || isConfirmed}
+
+          disabled={!isContractReady || isMinting || isPending || isConfirming || isConfirmed}
+
           className="flex-1 bg-purple-600 hover:bg-purple-700"
         >
           {(isPending || isConfirming) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -196,7 +299,9 @@ export function MintStepFour({ formData, validationData, onBack, onComplete }: P
               ? "Confirming..."
               : isConfirmed
                 ? "Completed!"
-                : "Mint Tokens"}
+
+                : mintingError ? "Try Again" : "Mint Tokens"}
+
         </Button>
       </div>
     </div>

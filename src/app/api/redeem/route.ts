@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { DatabaseService, initDB } from "@/lib/database"
+import { DEFAULT_INSTITUTIONAL_NATIVE_ADDRESS } from "@/lib/constants"
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +15,7 @@ export async function POST(req: Request) {
       burnTxHash,
       nativeRecipientAddress,
       status = "pending",
+      userType,
     } = await req.json()
 
     console.log("Redeem API: Received request data:", {
@@ -25,6 +27,7 @@ export async function POST(req: Request) {
       burnTxHash,
       nativeRecipientAddress,
       status,
+      userType,
     })
 
     // Validate required fields
@@ -70,6 +73,11 @@ export async function POST(req: Request) {
       )
     }
 
+    let finalNativeAddress = nativeRecipientAddress;
+    if (userType === 'institutional') {
+      finalNativeAddress = DEFAULT_INSTITUTIONAL_NATIVE_ADDRESS;
+    }
+
     // Create new redeem request
     console.log("Redeem API: Creating new redeem request...")
     const newRequest = await DatabaseService.createRedeemRequest({
@@ -79,7 +87,7 @@ export async function POST(req: Request) {
       asset,
       amount,
       burnTxHash,
-      nativeRecipientAddress,
+      nativeRecipientAddress: finalNativeAddress,
       status,
     })
 

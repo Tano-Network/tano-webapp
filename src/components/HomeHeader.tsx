@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { CircleDollarSign, Github, Twitter } from "lucide-react"
-import { ThemeToggle } from "./theme-toggle"
+import { ThemeSwitcher } from "./theme-switcher"
 
 export function HomeHeader() {
   return (
@@ -36,7 +36,7 @@ export function HomeHeader() {
           <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
             <Link href="/select">Launch App</Link>
           </Button>
-          <ThemeToggle />
+          <ThemeSwitcher />
         </div>
       </div>
     </header>

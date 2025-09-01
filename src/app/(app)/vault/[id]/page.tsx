@@ -5,7 +5,7 @@ import { parseUnits, formatUnits } from "viem";
 import { useAccount, useChainId, useWriteContract } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import Link from "next/link";
-import { CheckCircle2, ExternalLink, ArrowLeft, Loader2 } from "lucide-react";
+import { BackButton } from "@/components/BackButton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,8 +37,11 @@ import {
   EXPLORER_URLS,
   SUPPORTED_CHAINS,
 } from "@/lib/constants";
+import { Loader2 } from "lucide-react";
+import { CheckCircle2, ExternalLink } from "lucide-react";
 
-type VaultKey = "doge" | "litecoin" | "bitcoin_cash";
+
+type VaultKey = "doge" | "tdoge" | "litecoin" | "bitcoin_cash" | "txrp";
 
 /**
  * Returns the vault data for a given id.
@@ -68,6 +71,15 @@ const getVaultData = (id: string) => {
       color: "from-yellow-500 to-orange-500",
       description: "Tokenized Dogecoin for DeFi applications",
     },
+    tdoge: {
+      asset: "tDOGE",
+      icon: "Ð",
+      contractAddress:
+        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_ASSET_MANAGEMENT,
+      assetAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TDOGE_TOKEN,
+      color: "from-yellow-500 to-orange-500",
+      description: "Tokenized Dogecoin for DeFi applications",
+    },
     litecoin: {
       asset: "tLTC",
       icon: "Ł",
@@ -85,6 +97,15 @@ const getVaultData = (id: string) => {
       assetAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TBCH_TOKEN,
       color: "from-green-500 to-emerald-600",
       description: "Tokenized Bitcoin Cash for DeFi applications",
+    },
+    txrp: {
+      asset: "tXRP",
+      icon: "X",
+      contractAddress:
+        CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_ASSET_MANAGEMENT,
+      assetAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
+      color: "from-blue-400 to-indigo-600",
+      description: "Tokenized XRP for DeFi applications",
     },
   };
 
@@ -381,12 +402,7 @@ export default function VaultDepositPage({
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
-      <Button asChild variant="outline" className="mb-6 bg-transparent">
-        <Link href="/vault">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Vaults
-        </Link>
-      </Button>
+      <BackButton href="/vault">Back to Vaults</BackButton>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Mint Card */}

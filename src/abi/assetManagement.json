@@ -10,6 +10,16 @@
         "internalType": "address",
         "name": "initialOwner",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_verifier",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_programVKey",
+        "type": "bytes32"
       }
     ],
     "stateMutability": "nonpayable",
@@ -129,6 +139,19 @@
   {
     "inputs": [
       {
+        "internalType": "bytes32",
+        "name": "_programVKey",
+        "type": "bytes32"
+      }
+    ],
+    "name": "changeProgramVKey",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "user",
         "type": "address"
@@ -191,6 +214,25 @@
         "type": "address"
       }
     ],
+    "name": "getZkMintedAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
     "name": "isWhitelisted",
     "outputs": [
       {
@@ -216,6 +258,24 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "_proofBytes",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_publicValues",
+        "type": "bytes"
+      }
+    ],
+    "name": "mintWithZk",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "owner",
     "outputs": [
@@ -230,7 +290,33 @@
   },
   {
     "inputs": [],
+    "name": "programVKey",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_verifier",
+        "type": "address"
+      }
+    ],
+    "name": "setVerifier",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -282,6 +368,103 @@
   {
     "inputs": [
       {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "tx_values",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "usedTxHashes",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "verifier",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes",
+        "name": "_publicValues",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_proofBytes",
+        "type": "bytes"
+      }
+    ],
+    "name": "verifyProof",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint64",
+            "name": "total_amount",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "sender_address_hash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "owner_address",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "tx_hash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct PublicValuesTx",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -298,6 +481,30 @@
         "internalType": "uint256",
         "name": "mintedAmount",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "zkUsers",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "mintedAmt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "latest_tx_hash",
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Address is required" }, { status: 400 })
     }
 
-    const latestRequest = await DatabaseService.getLatestMintRequestByAddress(address, vaultId || undefined)
+    const latestRequest = await DatabaseService.getLatestMintRecordByAddress(address, vaultId || undefined)
 
     if (!latestRequest) {
       return NextResponse.json({ error: "No mint request found" }, { status: 404 })

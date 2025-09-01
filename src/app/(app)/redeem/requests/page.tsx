@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
-import { RefreshCw, ExternalLink, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft } from "lucide-react"
+import { BackButton } from "@/components/BackButton"
 import Link from "next/link"
+import { RefreshCw, ExternalLink, Clock, CheckCircle, XCircle } from "lucide-react"
 
 interface RedeemRequest {
   id: string
@@ -94,6 +95,8 @@ export default function RedeemRequestsPage() {
         return "Ł"
       case "BCH":
         return "₿"
+      case "ADA": // Added for Cardano
+        return "₳"
       default:
         return asset.charAt(0)
     }
@@ -107,6 +110,8 @@ export default function RedeemRequestsPage() {
         return "from-gray-400 to-gray-600"
       case "BCH":
         return "from-green-500 to-emerald-600"
+      case "ADA": // Added for Cardano
+        return "from-blue-600 to-purple-600"
       default:
         return "from-gray-400 to-gray-600"
     }
@@ -169,12 +174,7 @@ export default function RedeemRequestsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-6">
-        <Button variant="ghost" asChild className="mb-4">
-          <Link href="/redeem">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Redeem
-          </Link>
-        </Button>
+        <BackButton href="/redeem">Back to Redeem</BackButton>
 
         <div className="flex items-center justify-between">
           <div>

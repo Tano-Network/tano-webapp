@@ -46,19 +46,19 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans bg-grid-pattern antialiased">
-        <Web3Providers>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Web3Providers>
             <div className="min-h-screen bg-background transition-colors duration-300">
               {children}
             </div>
             <Toaster />
-          </ThemeProvider>
-        </Web3Providers>
+          </Web3Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -50,7 +50,9 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
 
       if (duplicateCheckResponse.ok) {
         const { records } = await duplicateCheckResponse.json()
-        const existingRecord = records.find((record: any) => record.nativeTxHash === txHash.trim())
+
+        const existingRecord = records.find((record: any) => record.native_hash === txHash.trim())
+        console.log("Existing record:", existingRecord)
 
         if (existingRecord) {
           throw new Error(
@@ -59,8 +61,24 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
         }
       }
 
-      // Generate proof using prove-doge-transaction API
-      const response = await fetch("/api/prove-doge-transaction", {
+
+      let proveApiEndpoint = ""
+      switch (vault?.id) {
+        case "tdoge":
+          proveApiEndpoint = "/api/prove-doge-transaction"
+          break
+        case "txrp":
+          proveApiEndpoint = "/api/prove-xrp-transaction"
+          break
+        case "tada":
+          proveApiEndpoint = "/api/prove-cardano-transaction"
+          break
+        default:
+          throw new Error(`Unsupported vault selected: ${vault?.name}`)
+      }
+
+      const response = await fetch(proveApiEndpoint, {
+
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -76,19 +94,26 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
         throw new Error(data?.error || "Failed to generate proof")
       }
 
-      if (data.totalDoge && data.senderAddress && data.proof) {
+
+      const totalAmount = data.totalDoge || data.totalXrp || data.totalLovelace
+      const coinSymbol = vault?.coin || ""
+      const decimals = coinSymbol === "DOGE" ? 100000000 : 1000000 
+
+      if (totalAmount && data.senderAddress && data.proof) {
+
         setValidationResult(data)
 
         toast({
           title: "Validation Complete",
-          description: `Transaction validated! Amount: ${(data.totalDoge / 100000000).toFixed(8)} DOGE`,
+
+          description: `Transaction validated! Amount: ${(totalAmount / decimals).toFixed(8)} ${coinSymbol}`,
         })
 
-        // Pass validation data to step 4
         onComplete({
           ...data,
           txHash: txHash.trim(),
-          amount: (data.totalDoge / 100000000).toString(),
+          amount: (totalAmount / decimals).toString(),
+
         })
       } else {
         throw new Error("Invalid proof response format")
@@ -141,7 +166,9 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
               <Label htmlFor="txHash">Transaction Hash</Label>
               <Input
                 id="txHash"
-                placeholder="Enter your Dogecoin transaction hash..."
+
+                placeholder={`Enter your ${vault?.coin || ""} transaction hash...`}
+
                 value={txHash}
                 onChange={(e) => setTxHash(e.target.value)}
                 className="font-mono text-sm"
@@ -154,7 +181,9 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
 
       {(isValidating || validationResult) && (
         <ValidationStepGuide
-          chainName={vault?.nativeChainName || "Dogecoin"}
+
+          chainName={vault?.nativeChainName || ""}
+
           isValidating={isValidating}
           validationResult={validationResult}
           txHash={txHash}
@@ -175,34 +204,50 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
       {validationResult && !isValidating && (
         <Alert
           className={
-            validationResult.totalDoge || validationResult.proof
+
+            validationResult.proof
+
               ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950"
               : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950"
           }
         >
-          {validationResult.totalDoge || validationResult.proof ? (
+
+          {validationResult.proof ? (
+
             <CheckCircle className="h-4 w-4 text-green-600" />
           ) : (
             <AlertTriangle className="h-4 w-4 text-red-600" />
           )}
           <AlertDescription
             className={
-              validationResult.totalDoge || validationResult.proof
+
+              validationResult.proof
+
                 ? "text-green-800 dark:text-green-200"
                 : "text-red-800 dark:text-red-200"
             }
           >
             <strong>
-              {validationResult.totalDoge || validationResult.proof ? "Validation Complete!" : "Validation Failed"}
+
+              {validationResult.proof ? "Validation Complete!" : "Validation Failed"}
             </strong>
-            {validationResult.totalDoge || validationResult.proof
-              ? ` Your transaction (${(validationResult.totalDoge / 100000000).toFixed(8)} DOGE) has been validated and is ready for minting.`
+            {validationResult.proof
+              ? ` Your transaction (${( (validationResult.totalDoge || validationResult.totalXrp) / (vault?.coin === "DOGE" ? 100000000 : 10000000) ).toFixed(8)} ${vault?.coin}) has been validated and is ready for minting.`
+
               : ` ${validationResult.error || "Please check your transaction hash and try again."}`}
           </AlertDescription>
         </Alert>
       )}
 
-      <ValidationLoadingModal isOpen={isValidating} onClose={() => {}} />
+
+      <ValidationLoadingModal
+        isOpen={isValidating}
+        onClose={() => setIsValidating(false)} // Allow closing the modal if validation is stuck
+        vaultId={vault?.id || ""}
+        isValidating={isValidating}
+        validationResult={validationResult}
+      />
     </div>
   )
 }
+

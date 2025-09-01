@@ -10,6 +10,7 @@ import {
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { parseUnits, formatUnits, isAddress, maxUint256 } from "viem";
+import { AlertTriangle, CheckCircle, ExternalLink, Info, Loader2, Wallet } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -30,10 +31,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, AlertTriangle, CheckCircle, ExternalLink, Loader2, Info, Wallet } from 'lucide-react';
+import { BackButton } from "@/components/BackButton";
 import { VAULTS, DEFAULT_INSTITUTIONAL_NATIVE_ADDRESS } from "@/lib/constants";
 import Link from "next/link";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useUserType } from "@/contexts/UserTypeContexts";
 
 const ERC20_ABI = [
   {
@@ -84,6 +86,7 @@ export default function RedeemPage() {
   const router = useRouter();
   const { address, isConnected, chainId } = useAccount();
   const { toast } = useToast();
+  const { userType } = useUserType();
   const {
     writeContract,
     data: hash,
@@ -194,6 +197,14 @@ export default function RedeemPage() {
   // Fetch latest mint request for native recipient address
   useEffect(() => {
     const fetchNativeAddress = async () => {
+      if (userType === "institutional") {
+        setNativeAddress(DEFAULT_INSTITUTIONAL_NATIVE_ADDRESS);
+        setIsFetchingNativeAddress(false);
+        return;
+      }
+
+      console.log("Fetching native address...");
+      console.log("Vault ID:", vaultId);
       if (!isConnected || !address || !vaultId) {
         setNativeAddress("");
         setNativeAddressError("Connect your wallet to fetch address.");
@@ -227,7 +238,7 @@ export default function RedeemPage() {
     };
 
     fetchNativeAddress();
-  }, [isConnected, address, vaultId]);
+  }, [isConnected, address, vaultId, userType]);
 
   // Handle successful burn transaction
   useEffect(() => {
@@ -273,6 +284,7 @@ export default function RedeemPage() {
         burnTxHash: txHash,
         nativeRecipientAddress: nativeAddress,
         status: "pending",
+        userType: userType,
       });
 
       const response = await fetch("/api/redeem", {
@@ -289,6 +301,7 @@ export default function RedeemPage() {
           burnTxHash: txHash,
           nativeRecipientAddress: nativeAddress,
           status: "pending",
+          userType: userType,
         }),
       });
 
@@ -476,12 +489,7 @@ export default function RedeemPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="mb-6">
-        <Button variant="ghost" asChild className="mb-4">
-          <Link href="/redeem">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Redeem
-          </Link>
-        </Button>
+        <BackButton href="/redeem">Back to Redeem</BackButton>
 
         <div className="flex items-center gap-4 mb-2">
           <div
@@ -811,17 +819,17 @@ export default function RedeemPage() {
               Redeem Request Submitted Successfully!
             </DialogTitle>
             <DialogDescription className="space-y-3 pt-2">
-              <p>
+              <div>
                 Your redeem request for{" "}
                 <strong>
                   {amount} {vault.asset}
                 </strong>{" "}
                 has been submitted successfully.
-              </p>
-              <p>
+              </div>
+              <div>
                 Native {vault.nativeChainName} tokens will be sent to your
                 address within 7 days.
-              </p>
+              </div>
               {burnTxHash && (
                 <div className="flex items-center gap-2 text-sm">
                   <span>Burn Transaction:</span>
