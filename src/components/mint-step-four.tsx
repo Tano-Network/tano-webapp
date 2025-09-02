@@ -58,6 +58,7 @@ export function MintStepFour({
     isPending,
   } = useWriteContract();
 
+
   const createMintRecord = async (status: string, txHash?: string) => {
     try {
       const response = await fetch("/api/mint-records", {
@@ -79,16 +80,20 @@ export function MintStepFour({
       });
 
       if (!response.ok) {
+
         throw new Error(`Failed to create mint record with status ${status}`);
       }
       return response.json(); // Return the created record
+
     } catch (error: any) {
       toast({
         title: "Record Creation Failed",
         description: error.message || "Failed to create mint record.",
         variant: "destructive",
+
       });
       throw error; // Re-throw to propagate the error
+
     }
   };
 
@@ -143,8 +148,10 @@ export function MintStepFour({
             View on Explorer <ExternalLink className="h-3 w-3" />
           </a>
         ),
+
       });
       updateMintRecord(receipt.transactionHash);
+
     }
   }, [isConfirmed, receipt]);
 
@@ -155,9 +162,11 @@ export function MintStepFour({
         title: "Minting Failed",
         description: mintingTxError.message,
         variant: "destructive",
+
       });
       createMintRecord("failed"); // Call createMintRecord with "failed" status
       setIsMinting(false);
+
     }
   }, [isMintingError, mintingTxError]);
 
@@ -179,6 +188,7 @@ export function MintStepFour({
       return;
     }
 
+
     setIsMinting(true);
     // Create a pending mint record
     try {
@@ -187,6 +197,7 @@ export function MintStepFour({
       console.error("Failed to create pending mint record:", error);
       setIsMinting(false);
       return;
+
     }
 
     try {
