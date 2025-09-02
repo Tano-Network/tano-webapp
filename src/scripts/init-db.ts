@@ -16,11 +16,11 @@ async function main() {
     const { DatabaseService } = await import("@/lib/database")
 
     // Try to fetch all requests to test connection
-    const mintRequests = await DatabaseService.getAllMintRequests()
+    const mintRecords = await DatabaseService.getAllMintRecords()
     const redeemRequests = await DatabaseService.getAllRedeemRequests()
 
     console.log(`📊 Database status:`)
-    console.log(`- Mint requests: ${mintRequests.length}`)
+    console.log(`- Mint records: ${mintRecords.length}`)
     console.log(`- Redeem requests: ${redeemRequests.length}`)
 
     console.log("✅ Database connection test successful!")
