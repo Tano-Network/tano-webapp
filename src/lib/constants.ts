@@ -157,7 +157,7 @@ export const VAULTS: Vault[] = [
     tokenAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_TOKEN,
     assetManagementAddress: CONTRACT_ADDRESSES[SUPPORTED_CHAINS.SEPOLIA].TXRP_ASSET_MANAGEMENT,
     nativeChainName: "XRP Testnet",
-    nativeAddress: "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
+    nativeAddress: "rpJRDWw1M9jm7NRgrrSvHLJFWA7CaeaWuw",
     icon: "https://assets.coingecko.com/coins/images/44/thumb/xrp-symbol-white-128.png",
     iconChar: "X",
     color: "from-blue-400 to-indigo-600",
