@@ -12,6 +12,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Sparkles,
+  LayoutGrid,
+  LayoutList,
 } from "lucide-react";
 import { useAccount, useChainId, usePublicClient } from "wagmi";
 import {
@@ -134,6 +136,7 @@ interface EarnPoolCardProps {
   onSelect: (pool: any) => void;
   isLoading: boolean;
   index: number;
+  layout?: "grid" | "list";
 }
 /**
  * EarnPoolCard component displays information about an earning pool.
@@ -151,6 +154,7 @@ const EarnPoolCard = ({
   onSelect,
   isLoading,
   index,
+  layout = "grid",
 }: EarnPoolCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -177,6 +181,65 @@ const EarnPoolCard = ({
   };
 
   const isDisabled = pool.status === "inactive";
+
+  if (layout === "list") {
+    return (
+      <Card
+        className={cn(
+          "group relative overflow-hidden transition-all duration-300 hover:shadow-lg cursor-pointer flex items-center p-4",
+          isDisabled && "opacity-60 cursor-not-allowed"
+        )}
+        style={{
+          animationDelay: `${index * 100}ms`,
+          animation: "slideInUp 0.6s ease-out forwards",
+        }}
+        onClick={() => !isDisabled && onSelect(pool)}
+      >
+        <div className="flex items-center gap-4 flex-grow">
+          <div
+            className={cn(
+              "bg-gradient-to-br text-white rounded-full h-10 w-10 flex items-center justify-center text-lg font-bold shadow-md",
+              pool.color
+            )}
+          >
+            {pool.icon}
+          </div>
+          <div className="flex-grow">
+            <div className="font-semibold group-hover:text-primary transition-colors">
+              {pool.asset} Pool
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {pool.description}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-muted-foreground">APY</div>
+            <div className="font-semibold text-green-600 dark:text-green-400">
+              {pool.apy}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-muted-foreground">Total Staked</div>
+            {isLoading ? (
+              <Skeleton className="h-5 w-24" />
+            ) : (
+              <div className="font-semibold">
+                {Number.parseFloat(pool.totalStaked).toFixed(2)} {pool.asset}
+              </div>
+            )}
+          </div>
+        </div>
+        <Button
+          size="sm"
+          className="ml-4"
+          disabled={isDisabled || isLoading}
+          variant={isDisabled ? "secondary" : "default"}
+        >
+          {isLoading ? <LoadingSpinner size="sm" /> : "Open"}
+        </Button>
+      </Card>
+    );
+  }
 
   return (
     <Card
@@ -296,6 +359,26 @@ const EarnPoolCard = ({
   );
 };
 
+const LayoutButtons = ({ setLayout, layout }: { setLayout: (layout: "grid" | "list") => void; layout: "grid" | "list" }) => (
+  
+  <div className="flex items-center gap-2">
+    <Button
+      variant={layout === "grid" ? "default" : "outline"}
+      size="icon"
+      onClick={() => setLayout("grid")}
+    >
+      <LayoutGrid size={16} />
+    </Button>
+    <Button
+      variant={layout === "list" ? "default" : "outline"}
+      size="icon"
+      onClick={() => setLayout("list")}
+    >
+      <LayoutList size={16} />
+    </Button>
+  </div>
+);
+
 /**
  * Earn dashboard page, displays various statistics and earn pools
  *
@@ -316,6 +399,7 @@ export default function EarnDashboardPage() {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [pageLoaded, setPageLoaded] = useState(false);
   const [coinPrices, setCoinPrices] = useState<Record<string, number>>({});
+  const [layout, setLayout] = useState("grid" as "grid" | "list");
 
   useEffect(() => {
     setPageLoaded(true);
@@ -547,15 +631,25 @@ export default function EarnDashboardPage() {
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
             Available Earn Pools
           </h2>
-          {isLoadingData && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <LoadingSpinner size="sm" />
-              <span className="text-sm">Loading pool data...</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {isLoadingData && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <LoadingSpinner size="sm" />
+                <span className="text-sm">Loading pool data...</span>
+              </div>
+            )}
+            <LayoutButtons setLayout={setLayout} layout={layout} />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          className={cn(
+            "scrollable-container overflow-y-auto max-h-[600px] p-1",
+            layout === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              : "flex flex-col gap-4"
+          )}
+        >
           {earnPoolsData.map((pool, index) => (
             <EarnPoolCard
               key={pool.id}
@@ -563,6 +657,7 @@ export default function EarnDashboardPage() {
               onSelect={onSelectPool}
               isLoading={isLoadingData}
               index={index}
+              layout={layout}
             />
           ))}
         </div>

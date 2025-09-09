@@ -73,6 +73,12 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
         case "tada":
           proveApiEndpoint = "/api/prove-cardano-transaction"
           break
+        case "tltc":
+          proveApiEndpoint = "/api/prove-litecoin-transaction"
+          break
+        case "tbch":
+          proveApiEndpoint = "/api/prove-bch-transaction"
+          break
         default:
           throw new Error(`Unsupported vault selected: ${vault?.name}`)
       }
@@ -95,9 +101,9 @@ export function MintStepThree({ formData, onBack, onComplete }: Props) {
       }
 
 
-      const totalAmount = data.totalDoge || data.totalXrp || data.totalLovelace
+      const totalAmount = data.totalAmount
       const coinSymbol = vault?.coin || ""
-      const decimals = coinSymbol === "DOGE" ? 100000000 : 1000000 
+      const decimals = vault?.decimals || 0
 
       if (totalAmount && data.senderAddress && data.proof) {
 
